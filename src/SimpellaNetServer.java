@@ -14,8 +14,8 @@ import java.net.SocketException;
  * 
  */
 public class SimpellaNetServer {
-	int port = 0;
-	boolean status = true;
+	int port;
+	boolean status;
 
 	class TCPServer implements Runnable {
 		private int portNumber;
@@ -28,13 +28,13 @@ public class SimpellaNetServer {
 			try {
 				TCPServerThread(portNumber);
 			} catch (Exception e) {
-				// TODNetSrvO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	};
 
 	public int start() {
+		status = true;
 		Thread tcp_t = new Thread(new TCPServer(port));
 		tcp_t.start();
 		return 0;
@@ -74,21 +74,37 @@ public class SimpellaNetServer {
 				continue;
 			}
 			System.out.println("Accepted!");
-			String replyToConnect = "SIMPELLA/0.6 200 OK";
-			DataOutputStream outToClient = new DataOutputStream(
-					clientSocket.getOutputStream());
-			
-			DataInputStream inFromClient = new DataInputStream(
-					clientSocket.getInputStream());
-			byte[] cmd = new byte[22];
-			inFromClient.read(cmd);
-			String S = new String(cmd);
-			if (!S.equals("SIMPELLA CONNECT/0.6\r\n")) {
-				System.out.println("Continuing " + S);
-				replyToConnect = "SIMPELLA/0.6 503 KO";
+			String inComingIP = clientSocket.getInetAddress().getHostAddress();
+			int inComingPort = clientSocket.getPort();
+			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP, inComingPort) || 
+					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
+				System.out.println("Duplicate connection");
+				//TODO check headers for ping, pong, query or query-hit messages
+			} else {
+				String replyToConnect = "SIMPELLA/0.6 200 OK";
+				DataOutputStream outToClient = new DataOutputStream(
+						clientSocket.getOutputStream());
+
+				DataInputStream inFromClient = new DataInputStream(
+						clientSocket.getInputStream());
+				byte[] cmd = new byte[512]; 
+				//TODO read larger messages in chunks
+				int len = inFromClient.read(cmd);
+				
+				String S = new String(cmd);
+				if (S.substring(0, len).equals("SIMPELLA CONNECT/0.6\r\n")) {
+					if(SimpellaConnectionStatus.incomingConnectionCount < 3){
+						System.out.println("Server replies with " + replyToConnect);
+						outToClient.write(replyToConnect.getBytes());
+						SimpellaConnectionStatus.addIncomingConnection(inComingIP, inComingPort);
+					} else {
+						String error = "SIMPELLA/0.6 503 Maximum number of connections reached";
+						System.out.println("Server replies with " + error);
+						outToClient.write(error.getBytes());
+					}
+				}
 			}
-			System.out.println("Server replies with " + replyToConnect);
-			outToClient.write(replyToConnect.getBytes());
+			clientSocket.close();
 		}
 	}
 

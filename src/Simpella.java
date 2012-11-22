@@ -18,11 +18,15 @@ public class Simpella {
 	public static void main(String[] args) throws Exception {
 
 		SimpellaNetServer NetSrv = new SimpellaNetServer();
-		int port = Integer.parseInt(args[0]);
-
+		int port = 6346;
+		if(args.length == 1) {
+			port = Integer.parseInt(args[0]);
+		}
+		SimpellaConnectionStatus.ConnectionStatusInit();
+		//TODO take second argument to be file server
 		NetSrv.setPort(port);
 		NetSrv.start();
-		SimpellaCommads cmd = new SimpellaCommads();
+		SimpellaCommands cmd = new SimpellaCommands();
 
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
@@ -46,10 +50,12 @@ public class Simpella {
 
 			if (cmd_args[0].equals("open")) {
 				System.out.println("open command");
-				cmd.setConnectionIP("127.0.0.1");
-				cmd.setConnectionPort(Integer.parseInt(cmd_args[1]));
+				cmd.setConnectionIP(cmd_args[1]);
+				cmd.setConnectionPort(Integer.parseInt(cmd_args[2]));
 				cmd.connect();
 			} else {
+				//TODO implement quit/bye
+				//TODO implement other commands
 				System.out.println("Command not yet implemented!");
 			}
 		}
