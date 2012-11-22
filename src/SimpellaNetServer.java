@@ -80,6 +80,15 @@ public class SimpellaNetServer {
 					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
 				System.out.println("Duplicate connection");
 				//TODO check headers for ping, pong, query or query-hit messages
+
+				DataInputStream inFromClient = new DataInputStream(
+						clientSocket.getInputStream());
+				byte[] header = new byte[23];
+				inFromClient.read(header);
+				if(header[16]==(byte)0x00){
+					System.out.println("Ping received");
+				}
+				
 			} else {
 				String replyToConnect = "SIMPELLA/0.6 200 OK";
 				DataOutputStream outToClient = new DataOutputStream(

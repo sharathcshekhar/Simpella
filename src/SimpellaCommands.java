@@ -3,6 +3,7 @@ import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Arrays;
 
 public class SimpellaCommands {
 	int connectionPort = 0;
@@ -36,7 +37,22 @@ public class SimpellaCommands {
 								+ SimpellaConnectionStatus.outgoingConnectionCount);
 				ret = 0;
 				// TODO send Ping if its the first connection i.e.,
-				// if(outgoingConnectionCount == 1)
+				// if(outgoingConnectionCount == 1)send ping
+				Header pingH = new Header();
+				pingH.setMsgType("ping");
+				pingH.initializeHeader();
+				String s1 = new String(pingH.getHeader());
+				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
+				pingH.setMsgId();
+				pingH.getHeader();
+				s1=new String(pingH.getHeader());
+				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
+				
+				clientSocket = new Socket(connectionIP, connectionPort);
+				outToServer = new DataOutputStream(
+						clientSocket.getOutputStream());
+				outToServer.write(pingH.getHeader());
+				//Ping logic
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;

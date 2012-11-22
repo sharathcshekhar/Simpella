@@ -17,8 +17,8 @@ public class SimpellaConnectionStatus {
 //TODO check for only IP. Checking both IP and port # for testing purpose only	
 	public static boolean isInConnectionPresent(String inComingIP, int port) {
 		for(int i = 0; i < 3; i++) {
-			if (incomingConnectionList[i].remoteIP.equals(inComingIP) && 
-					incomingConnectionList[i].remotePort == port) {
+			if (incomingConnectionList[i].remoteIP.equals(inComingIP)) {
+					//&&incomingConnectionList[i].remotePort == port) {
 					return true;
 				}
 		}
