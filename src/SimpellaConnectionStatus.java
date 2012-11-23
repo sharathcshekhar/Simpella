@@ -1,3 +1,5 @@
+import java.net.Socket;
+
 public class SimpellaConnectionStatus {
 	public static int incomingConnectionCount = 0;
 	public static int outgoingConnectionCount = 0;
@@ -25,14 +27,15 @@ public class SimpellaConnectionStatus {
 		return false;
 	}
 	
-	public static void addIncomingConnection(String IP, int portNo) {
+	public static void addIncomingConnection(Socket clientSocket) {
 		if(incomingConnectionCount == 3){
 			return;
 		} else {
 			for(int i = 0; i < 3; i++) {
-				if(incomingConnectionList[i].remoteIP.equals("")) {
-					incomingConnectionList[i].remoteIP = IP;
-					incomingConnectionList[i].remotePort = portNo;
+				if(incomingConnectionList[i].sessionSocket == null) {
+					incomingConnectionList[i].sessionSocket = clientSocket;
+					incomingConnectionList[i].remoteIP = clientSocket.getInetAddress().getHostAddress();
+					incomingConnectionList[i].remotePort = clientSocket.getPort();
 					incomingConnectionCount++;
 					return;
 				}
@@ -40,11 +43,12 @@ public class SimpellaConnectionStatus {
 		}
 	}
 	
-	public static void delIncomingConnection(String IP, int portNo) {
+	public static void delIncomingConnection(Socket clientSocket) {
 		for(int i = 0; i < 3; i++) {
-			if(incomingConnectionList[i].remoteIP.equals(IP)) {
+			if(incomingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				incomingConnectionList[i].remoteIP = "";
 				incomingConnectionList[i].remotePort = 0;
+				incomingConnectionList[i].sessionSocket = null;
 				incomingConnectionCount--;
 				return;
 			}
@@ -62,25 +66,27 @@ public class SimpellaConnectionStatus {
 		}
 		return false;
 	}
-	public static void addOutgoingConnection(String IP, int portNo) {
+	public static void addOutgoingConnection(Socket clientSocket) {
 		if(outgoingConnectionCount == 3){
 			return;
 		} else {
 			for(int i = 0; i < 3; i++) {
-				if(outgoingConnectionList[i].remoteIP.equals("")) {
-					outgoingConnectionList[i].remoteIP = IP;
-					outgoingConnectionList[i].remotePort = portNo;
+				if(outgoingConnectionList[i].sessionSocket == null) {
+					outgoingConnectionList[i].sessionSocket = clientSocket;
+					outgoingConnectionList[i].remoteIP = clientSocket.getInetAddress().getHostAddress();
+					outgoingConnectionList[i].remotePort = clientSocket.getPort();
 					outgoingConnectionCount++;
 					return;
 				}
 			}
 		}
 	}
-	public static void delOutgoingConnection(String IP, int portNo) {
+	public static void delOutgoingConnection(Socket clientSocket) {
 		for(int i = 0; i < 3; i++) {
-			if(outgoingConnectionList[i].remoteIP.equals(IP)) {
+			if(outgoingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				outgoingConnectionList[i].remoteIP = "";
 				outgoingConnectionList[i].remotePort = 0;
+				outgoingConnectionList[i].sessionSocket = null;
 				outgoingConnectionCount--;
 				return;
 			}
@@ -95,10 +101,12 @@ class IncomingConnectionTable {
 		this.connectionId = 0;
 		this.remoteIP = "";
 		this.remotePort = 0;
+		this.sessionSocket = null;
 	}
 	int connectionId; //not used for now
 	String remoteIP;
 	int remotePort;
+	Socket sessionSocket;
 }
 
 class OutgoingConnectionTable {
@@ -107,8 +115,10 @@ class OutgoingConnectionTable {
 		this.connectionId = 0; //not used for now
 		this.remoteIP = "";
 		this.remotePort = 0;
+		this.sessionSocket = null;
 	}
 	int connectionId;
 	String remoteIP;
 	int remotePort;
+	Socket sessionSocket;
 }

@@ -9,6 +9,22 @@ public class SimpellaCommands {
 	String connectionIP = "";
 	
 	public int connect() throws Exception {
+		
+		class clientConnectionThread implements Runnable {
+			private Socket clientSocket;
+			public clientConnectionThread(Socket clientSocket) {
+				this.clientSocket = clientSocket;
+			}
+		public void run() {
+				try {
+					connectionListener(clientSocket);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		;
 		Socket clientSocket;
 		int ret = 0;
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 3) {
@@ -29,29 +45,48 @@ public class SimpellaCommands {
 			String S = new String(replyToConnect);
 			System.out.println("Server replies with " + S);
 			if (S.substring(0, len).equals("SIMPELLA/0.6 200 OK")) {
-				SimpellaConnectionStatus.addOutgoingConnection(connectionIP,
-						connectionPort);
+				SimpellaConnectionStatus.addOutgoingConnection(clientSocket);
 				System.out
 						.println("Connection successfully accepted, no. of connections = "
 								+ SimpellaConnectionStatus.outgoingConnectionCount);
 				ret = 0;
-				// TODO send Ping if its the first connection i.e.,
-				// if(outgoingConnectionCount == 1)
+				// TODO spawn thread and listen
+				Thread clienListner_t = new Thread(new clientConnectionThread(
+						clientSocket));
+				clienListner_t.start();
+				System.out.println("spawned a listner in infnite loop!");
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
+				clientSocket.close();
 			} else {
 				System.out.println("Unknown error: " + S);
 				ret = 1;
+				clientSocket.close();
 			}
 		} catch (SocketException E) {
 			System.out.println("Server closed the connection");
+			clientSocket.close();
 			return ret;
 		}
-			
-		clientSocket.close();
-		
 		return ret;
+	}
+	
+	public static void connectionListener(Socket sessionSocket) throws Exception {
+		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
+				sessionSocket.getInputStream()));
+		char[] replyToConnect = new char[25];
+		@SuppressWarnings("unused")
+		int len;
+		while (true) {
+			try {
+				len = inFromServer.read(replyToConnect);
+				// TODO handle the message
+			} catch (SocketException E) {
+				System.out.println("Server closed the connection");
+				return;
+			}
+		}
 	}
 
 	public int getConnectionPort() {

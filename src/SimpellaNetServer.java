@@ -52,6 +52,21 @@ public class SimpellaNetServer {
 	 */
 	private void TCPServerThread(int tcpServerPort) throws Exception {
 		// create client socket
+		class TCPserverResponseThread implements Runnable {
+			private Socket clientSocket;
+			public TCPserverResponseThread(Socket clientSocket) {
+				this.clientSocket = clientSocket;
+			}
+		public void run() {
+				try {
+					TCPserverResponse(clientSocket);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		;
 		Socket clientSocket = new Socket();
 		System.out.println("Starting TCP Server at port " + tcpServerPort);
 		ServerSocket SimpellaTCP = null;
@@ -79,35 +94,57 @@ public class SimpellaNetServer {
 			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP, inComingPort) || 
 					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
 				System.out.println("Duplicate connection");
-				//TODO check headers for ping, pong, query or query-hit messages
+				clientSocket.close();
 			} else {
-				String replyToConnect = "SIMPELLA/0.6 200 OK";
-				DataOutputStream outToClient = new DataOutputStream(
-						clientSocket.getOutputStream());
-
-				DataInputStream inFromClient = new DataInputStream(
-						clientSocket.getInputStream());
-				byte[] cmd = new byte[512]; 
-				//TODO read larger messages in chunks
-				int len = inFromClient.read(cmd);
-				
-				String S = new String(cmd);
-				if (S.substring(0, len).equals("SIMPELLA CONNECT/0.6\r\n")) {
-					if(SimpellaConnectionStatus.incomingConnectionCount < 3){
-						System.out.println("Server replies with " + replyToConnect);
-						outToClient.write(replyToConnect.getBytes());
-						SimpellaConnectionStatus.addIncomingConnection(inComingIP, inComingPort);
-					} else {
+				if(SimpellaConnectionStatus.incomingConnectionCount < 3){
+					Thread tcp_serverResp_t = new Thread(new TCPserverResponseThread(
+						clientSocket));
+					tcp_serverResp_t.start();
+				} else {
 						String error = "SIMPELLA/0.6 503 Maximum number of connections reached";
 						System.out.println("Server replies with " + error);
+						DataOutputStream outToClient = new DataOutputStream(
+								clientSocket.getOutputStream());
 						outToClient.write(error.getBytes());
-					}
+						clientSocket.close();
 				}
 			}
-			clientSocket.close();
 		}
 	}
+	
+	/**
+	 * TC pserver response.
+	 *
+	 * @param clientSocket the client socket
+	 */
+	public static void TCPserverResponse(Socket clientSocket) throws Exception {
+		//New connection, check for the connection headers
+		String replyToConnect = "SIMPELLA/0.6 200 OK";
+		DataOutputStream outToClient = new DataOutputStream(
+				clientSocket.getOutputStream());
 
+		DataInputStream inFromClient = new DataInputStream(
+				clientSocket.getInputStream());
+		byte[] cmd = new byte[512]; 
+		//TODO read larger messages in chunks
+		int len = inFromClient.read(cmd);
+		
+		String S = new String(cmd);
+		if (S.substring(0, len).equals("SIMPELLA CONNECT/0.6\r\n")) {
+			System.out.println("Server replies with " + replyToConnect);
+			outToClient.write(replyToConnect.getBytes());
+			SimpellaConnectionStatus.addIncomingConnection(clientSocket);
+		} else {
+			System.out.println("Unknown connection request, ignoring");
+		}
+		while(true) {
+			// call blocking read, this is where ping, pong, query 
+			// and query-hit msgs are received
+			len = inFromClient.read(cmd);
+			//TODO switch statement to process the input
+		}
+	}
+	
 	public int getPort() {
 		return port;
 	}
