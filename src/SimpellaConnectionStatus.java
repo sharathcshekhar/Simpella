@@ -64,7 +64,7 @@ public class SimpellaConnectionStatus {
 	}
 	public static void addOutgoingConnection(String IP, int portNo) {
 		if(outgoingConnectionCount == 3){
-			return;
+			return;// TODO send Ping if its the first connection i.e.,
 		} else {
 			for(int i = 0; i < 3; i++) {
 				if(outgoingConnectionList[i].remoteIP.equals("")) {

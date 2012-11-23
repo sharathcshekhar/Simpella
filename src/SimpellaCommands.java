@@ -36,40 +36,42 @@ public class SimpellaCommands {
 						.println("Connection successfully accepted, no. of connections = "
 								+ SimpellaConnectionStatus.outgoingConnectionCount);
 				ret = 0;
-				// TODO send Ping if its the first connection i.e.,
-				// if(outgoingConnectionCount == 1)send ping
-				Header pingH = new Header();
-				pingH.setMsgType("ping");
-				pingH.initializeHeader();
-				String s1 = new String(pingH.getHeader());
-				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
-				pingH.setMsgId();
-				pingH.getHeader();
-				s1=new String(pingH.getHeader());
-				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
-				
-				clientSocket = new Socket(connectionIP, connectionPort);
-				outToServer = new DataOutputStream(
-						clientSocket.getOutputStream());
-				outToServer.write(pingH.getHeader());
-				//Ping logic
+				if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
+					sendPing(clientSocket);
+				}//Ping logic
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
+				clientSocket.close();
 			} else {
 				System.out.println("Unknown error: " + S);
 				ret = 1;
+				clientSocket.close();
 			}
 		} catch (SocketException E) {
 			System.out.println("Server closed the connection");
+			clientSocket.close();
 			return ret;
 		}
-			
-		clientSocket.close();
-		
 		return ret;
 	}
-
+	
+	private void sendPing(Socket clientSocket) throws Exception
+	{
+		Header pingH = new Header();
+		pingH.setMsgType("ping");
+		pingH.initializeHeader();
+		//System.out.println("Pinged with Header = "+ Arrays.toString(pingH.getHeader()));
+		pingH.setMsgId();
+		String s1 = new String(pingH.getHeader());
+		System.out.println("Pinged with Header = " + s1);
+		
+		DataOutputStream outToServer = new DataOutputStream(
+				clientSocket.getOutputStream());
+		outToServer.write(pingH.getHeader());
+		return;
+	}
+	
 	public int getConnectionPort() {
 		return connectionPort;
 	}
@@ -85,4 +87,5 @@ public class SimpellaCommands {
 	public void setConnectionIP(String connectionIP) {
 		this.connectionIP = connectionIP;
 	}
+	
 }
