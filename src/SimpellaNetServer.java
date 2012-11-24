@@ -162,18 +162,21 @@ public class SimpellaNetServer {
 	}
 	public void broadcastPing(byte[] pingMsg, Socket sender) throws Exception {
 		Socket clientSocket = null;
+		String clientIP = "";
 		for(int i = 0; i < 3; i++) {
-			clientSocket = 
-			SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
-			if(clientSocket != sender) {
+			clientIP = 
+			SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
+			if(!(clientIP.equals("")) && 
+					!(sender.getInetAddress().getHostAddress().equals(clientIP))) {
 				/* send to everyone apart from this node */
 				SimpellaCommands.sendPing(clientSocket);
 			}
 		}
 		for(int j = 0; j < 3; j++) {
-			clientSocket = 
-			SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
-			if(clientSocket != sender) {
+			clientIP = 
+			SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
+			if(!(clientIP != null) && 
+					!(sender.getInetAddress().getHostAddress().equals(clientIP))) {
 				/* send to everyone apart from this node */
 				SimpellaCommands.sendPing(clientSocket);
 			}
