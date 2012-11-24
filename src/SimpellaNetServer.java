@@ -150,6 +150,7 @@ public class SimpellaNetServer {
 					// ignore Ping if the node has seen the request!
 				} else {
 					SimpellaRoutingTables.insertPingTable(key, clientSocket);
+					//TODO reply with a pong					
 					if(header[17] > 1) {
 						header[17]--; //decrement TTL
 						header[18]++; //Increment hops
@@ -158,6 +159,9 @@ public class SimpellaNetServer {
 				}
 			}
 			//TODO switch statement to process the input
+			// if header[16] == pong message,
+			// See if the pong message was for this system. If not, 
+			// forware the pong according to the routing table
 		}
 	}
 	public void broadcastPing(byte[] pingMsg, Socket sender) throws Exception {

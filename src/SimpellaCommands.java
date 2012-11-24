@@ -114,7 +114,11 @@ public class SimpellaCommands {
 		return;
 	}
 	
-
+	//TODO send_pong()
+	//TODO send_query()
+	//TODO send_query_hit()
+	//TODO ping() as a wrapper around 
+	
 	public int getConnectionPort() {
 		return connectionPort;
 	}
