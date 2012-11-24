@@ -1,13 +1,19 @@
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.StringTokenizer;
 
 public class SimpellaCommands {
 	int connectionPort = 0;
 	String connectionIP = "";
-	
+	//TODO for testing purpose moved socket out of connect()
+	Socket clientSocket;
 	public int connect() throws Exception {
 		
 		class clientConnectionThread implements Runnable {
@@ -56,7 +62,20 @@ public class SimpellaCommands {
 						clientSocket));
 				clienListner_t.start();
 				System.out.println("spawned a listner in infnite loop!");
-
+				// TODO send Ping if its the first connection i.e.,
+				// if(outgoingConnectionCount == 1)send ping
+				Header pingH = new Header();
+				pingH.setMsgType("ping");
+				pingH.initializeHeader();
+				pingH.setMsgId();
+				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
+				clientSocket = new Socket(connectionIP, connectionPort);
+				outToServer = new DataOutputStream(
+						clientSocket.getOutputStream());
+				outToServer.write(pingH.getHeader());
+				inFromServer.read(replyToConnect);
+				System.out.println("Server replied with pong : "+Arrays.toString(replyToConnect));
+				//Ping logic
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
@@ -105,15 +124,49 @@ public class SimpellaCommands {
 		pingH.setMsgType("ping");
 		pingH.initializeHeader();
 		pingH.setMsgId();
-		String s1 = new String(pingH.getHeader());
-		System.out.println("Pinged with Header = " + s1);
+		//String s1 = new String(pingH.getHeader());
+		System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
 		
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(pingH.getHeader());
 		return;
 	}
+
 	
+	/**
+	 * Find.
+	 *
+	 * @param searchTxt the search txt
+	 */
+	public void find(String searchTxt){
+		byte[] payload = new byte[4096];
+		if(searchTxt.getBytes(Charset.forName("UTF-8")).length<4063){	
+		
+		Header queryH = new Header();
+		queryH.setHeader(payload);
+		queryH.initializeHeader();
+		queryH.setMsgType("query");
+		queryH.setMsgId();
+		//TODO set and validate message and payload  
+		String s1 = new String(queryH.getHeader());
+		System.out.println("Pinged with query = " + s1);
+		DataOutputStream outToServer;
+		try {
+			outToServer = new DataOutputStream(
+					clientSocket.getOutputStream());
+			outToServer.write(queryH.getHeader());
+		} 
+		catch (IOException e) {
+			System.out.println("Connection error during find");
+		}
+		}
+		else{
+			System.out.println("Invalid searchtext");
+		}
+		return;
+		//TODO write query
+	}	
 
 	public int getConnectionPort() {
 		return connectionPort;
