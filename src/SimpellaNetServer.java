@@ -94,7 +94,18 @@ public class SimpellaNetServer {
 			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP, inComingPort) || 
 					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
 				System.out.println("Duplicate connection");
-				clientSocket.close();
+
+				//TODO check headers for ping, pong, query or query-hit messages
+
+				DataInputStream inFromClient = new DataInputStream(
+						clientSocket.getInputStream());
+				byte[] header = new byte[23];
+				inFromClient.read(header);
+				if(header[16]==(byte)0x00){
+					System.out.println("Ping received");
+				}
+				
+
 			} else {
 				if(SimpellaConnectionStatus.incomingConnectionCount < 3){
 					Thread tcp_serverResp_t = new Thread(new TCPserverResponseThread(

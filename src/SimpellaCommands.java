@@ -50,11 +50,13 @@ public class SimpellaCommands {
 						.println("Connection successfully accepted, no. of connections = "
 								+ SimpellaConnectionStatus.outgoingConnectionCount);
 				ret = 0;
+
 				// TODO spawn thread and listen
 				Thread clienListner_t = new Thread(new clientConnectionThread(
 						clientSocket));
 				clienListner_t.start();
 				System.out.println("spawned a listner in infnite loop!");
+
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
@@ -72,11 +74,15 @@ public class SimpellaCommands {
 		return ret;
 	}
 	
-	public static void connectionListener(Socket sessionSocket) throws Exception {
+
+	public void connectionListener(Socket sessionSocket) throws Exception {
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
 				sessionSocket.getInputStream()));
 		char[] replyToConnect = new char[512];
 		//TODO send ping message
+		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
+			sendPing(sessionSocket);
+		}
 		@SuppressWarnings("unused")
 		int len;
 		while (true) {
@@ -89,6 +95,24 @@ public class SimpellaCommands {
 			}
 		}
 	}
+
+
+	private void sendPing(Socket clientSocket) throws Exception
+	{
+		Header pingH = new Header();
+		pingH.setMsgType("ping");
+		pingH.initializeHeader();
+		//System.out.println("Pinged with Header = "+ Arrays.toString(pingH.getHeader()));
+		pingH.setMsgId();
+		String s1 = new String(pingH.getHeader());
+		System.out.println("Pinged with Header = " + s1);
+		
+		DataOutputStream outToServer = new DataOutputStream(
+				clientSocket.getOutputStream());
+		outToServer.write(pingH.getHeader());
+		return;
+	}
+	
 
 	public int getConnectionPort() {
 		return connectionPort;
@@ -105,4 +129,5 @@ public class SimpellaCommands {
 	public void setConnectionIP(String connectionIP) {
 		this.connectionIP = connectionIP;
 	}
+	
 }
