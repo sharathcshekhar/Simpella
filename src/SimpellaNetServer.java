@@ -116,7 +116,7 @@ public class SimpellaNetServer {
 	 *
 	 * @param clientSocket the client socket
 	 */
-	public static void TCPserverResponse(Socket clientSocket) throws Exception {
+	public void TCPserverResponse(Socket clientSocket) throws Exception {
 		//New connection, check for the connection headers
 		String replyToConnect = "SIMPELLA/0.6 200 OK";
 		DataOutputStream outToClient = new DataOutputStream(
@@ -141,17 +141,42 @@ public class SimpellaNetServer {
 			// and query-hit msgs are received
 			//TODO check headers for ping, pong, query or query-hit messages
 			byte[] header = new byte[23];
-			len = inFromClient.read(header);
+			len = inFromClient. read(header, 0, 23);
 			if (header[16] == (byte) 0x00) {
 				System.out.println("Ping received");
 				//TODO check routing table if the ping is seen before,
-				/*
-				 * if(header->guid is NOT present in the routing_table)
-				 * 	broadcast_ping()
-				 * else ignore
-				 */
+				String key = SimpellaRoutingTables.guidToString(header);
+				if(SimpellaRoutingTables.PingTable.containsKey(key)) {
+					// ignore Ping if the node has seen the request!
+				} else {
+					SimpellaRoutingTables.insertPingTable(key, clientSocket);
+					if(header[17] > 1) {
+						header[17]--; //decrement TTL
+						header[18]++; //Increment hops
+						broadcastPing(header, clientSocket);
+					}
+				}
 			}
 			//TODO switch statement to process the input
+		}
+	}
+	public void broadcastPing(byte[] pingMsg, Socket sender) throws Exception {
+		Socket clientSocket = null;
+		for(int i = 0; i < 3; i++) {
+			clientSocket = 
+			SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
+			if(clientSocket != sender) {
+				/* send to everyone apart from this node */
+				SimpellaCommands.sendPing(clientSocket);
+			}
+		}
+		for(int j = 0; j < 3; j++) {
+			clientSocket = 
+			SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
+			if(clientSocket != sender) {
+				/* send to everyone apart from this node */
+				SimpellaCommands.sendPing(clientSocket);
+			}
 		}
 	}
 	

@@ -97,7 +97,9 @@ public class SimpellaCommands {
 		}
 	}
 
-	private void sendPing(Socket clientSocket) throws Exception
+	
+	//TODO should take TTL & hops as input
+	public static void sendPing(Socket clientSocket) throws Exception
 	{
 		Header pingH = new Header();
 		pingH.setMsgType("ping");
