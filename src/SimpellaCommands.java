@@ -81,6 +81,7 @@ public class SimpellaCommands {
 		char[] replyToConnect = new char[512];
 		//TODO send ping message
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
+			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
 		@SuppressWarnings("unused")
@@ -96,13 +97,11 @@ public class SimpellaCommands {
 		}
 	}
 
-
 	private void sendPing(Socket clientSocket) throws Exception
 	{
 		Header pingH = new Header();
 		pingH.setMsgType("ping");
 		pingH.initializeHeader();
-		//System.out.println("Pinged with Header = "+ Arrays.toString(pingH.getHeader()));
 		pingH.setMsgId();
 		String s1 = new String(pingH.getHeader());
 		System.out.println("Pinged with Header = " + s1);

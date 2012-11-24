@@ -94,18 +94,6 @@ public class SimpellaNetServer {
 			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP, inComingPort) || 
 					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
 				System.out.println("Duplicate connection");
-
-				//TODO check headers for ping, pong, query or query-hit messages
-
-				DataInputStream inFromClient = new DataInputStream(
-						clientSocket.getInputStream());
-				byte[] header = new byte[23];
-				inFromClient.read(header);
-				if(header[16]==(byte)0x00){
-					System.out.println("Ping received");
-				}
-				
-
 			} else {
 				if(SimpellaConnectionStatus.incomingConnectionCount < 3){
 					Thread tcp_serverResp_t = new Thread(new TCPserverResponseThread(
@@ -151,7 +139,18 @@ public class SimpellaNetServer {
 		while(true) {
 			// call blocking read, this is where ping, pong, query 
 			// and query-hit msgs are received
-			len = inFromClient.read(cmd);
+			//TODO check headers for ping, pong, query or query-hit messages
+			byte[] header = new byte[23];
+			len = inFromClient.read(header);
+			if (header[16] == (byte) 0x00) {
+				System.out.println("Ping received");
+				//TODO check routing table if the ping is seen before,
+				/*
+				 * if(header->guid is NOT present in the routing_table)
+				 * 	broadcast_ping()
+				 * else ignore
+				 */
+			}
 			//TODO switch statement to process the input
 		}
 	}
