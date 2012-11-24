@@ -75,7 +75,8 @@ public class SimpellaCommands {
 	public static void connectionListener(Socket sessionSocket) throws Exception {
 		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
 				sessionSocket.getInputStream()));
-		char[] replyToConnect = new char[25];
+		char[] replyToConnect = new char[512];
+		//TODO send ping message
 		@SuppressWarnings("unused")
 		int len;
 		while (true) {
