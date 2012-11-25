@@ -221,6 +221,13 @@ public class SimpellaNetServer {
 		} else if(header[16] == (byte)0x01){
 			System.out.println("Pong received");
 			String guid = SimpellaRoutingTables.guidToString(header);
+			//Read the pong payload
+			byte[] pongPayLoad = new byte[14];
+			int len = inFromClient.read(pongPayLoad, 0, 14);
+			if(len != 14){
+				System.out.println("Something has gone wrong!");
+				return;
+			}
 			if(SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				// pong is for me
 				System.out.println("Pong received for self");
@@ -231,9 +238,6 @@ public class SimpellaNetServer {
 					Socket pongFwdSocket = SimpellaRoutingTables.PingTable.get(guid);
 					System.out.println("Pong received for ip " + 
 							pongFwdSocket.getInetAddress().getHostAddress());
-					byte[] pongPayLoad = new byte[14];
-					
-					inFromClient.read(pongPayLoad, 0, 14);
 					header[17]--; //decrement TTL
 					header[18]++; //Increment hops
 					DataOutputStream pongToClient = null;

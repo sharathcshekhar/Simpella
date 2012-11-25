@@ -81,20 +81,20 @@ public class SimpellaCommands {
 
 	public void connectionListener(Socket sessionSocket) throws Exception {
 		
-		DataInputStream inFromServer = new DataInputStream(
-				sessionSocket.getInputStream());
 		int len = 0;
 		byte[] msg = new byte[512];
-		//TODO send ping message
+		
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
 			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
 		while (true) {
 			try {
+				DataInputStream inFromServer = new DataInputStream(
+						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
 				System.out.println("msg received from server and its probably pong!");
-				// TODO handle the message
+			
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;
@@ -115,6 +115,8 @@ public class SimpellaCommands {
 		pingH.setMsgType("ping");
 		pingH.initializeHeader();
 		pingH.setMsgId();
+		String guid = SimpellaRoutingTables.guidToString(pingH.getHeader());
+		SimpellaRoutingTables.generatedPingList.add(guid);
 		//String s1 = new String(pingH.getHeader());
 		System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
 		
