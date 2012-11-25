@@ -5,9 +5,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.StringTokenizer;
 
 public class SimpellaCommands {
 	int connectionPort = 0;

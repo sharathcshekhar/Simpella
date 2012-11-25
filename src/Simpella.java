@@ -53,15 +53,6 @@ public class Simpella {
 				cmd.setConnectionIP(cmd_args[1]);
 				cmd.setConnectionPort(Integer.parseInt(cmd_args[2]));
 				cmd.connect();
-			} else if(cmd_args[0].equals("download")){
-				try {
-					int num = Integer.parseInt(cmd_args[1]);
-					SimpellaFileClient sc= new SimpellaFileClient();
-					sc.download(num);
-				} catch (NumberFormatException e) {
-					System.out.println("Enter proper number");
-				}
-				
 			} else if(cmd_args[0].equals("find")){
 				cmd.find(cmd_args[1]);
 			} else {
