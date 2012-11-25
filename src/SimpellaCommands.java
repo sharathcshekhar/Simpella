@@ -1,13 +1,16 @@
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Arrays;
 
 public class SimpellaCommands {
 	int connectionPort = 0;
 	String connectionIP = "";
-	
+	//TODO for testing purpose moved socket out of connect()
+	Socket clientSocket;
 	public int connect() throws Exception {
 		
 		class clientConnectionThread implements Runnable {
@@ -56,7 +59,6 @@ public class SimpellaCommands {
 						clientSocket));
 				clienListner_t.start();
 				System.out.println("spawned a listner in infnite loop!");
-
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
@@ -76,20 +78,27 @@ public class SimpellaCommands {
 	
 
 	public void connectionListener(Socket sessionSocket) throws Exception {
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
-				sessionSocket.getInputStream()));
-		char[] replyToConnect = new char[512];
-		//TODO send ping message
+		
+		int len = 0;
+		
+		
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
 			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
-		@SuppressWarnings("unused")
-		int len;
 		while (true) {
 			try {
-				len = inFromServer.read(replyToConnect);
-				// TODO handle the message
+			byte[] msg = new byte[512];
+				DataInputStream inFromServer = new DataInputStream(
+						sessionSocket.getInputStream());
+				len = inFromServer.read(msg, 0, 23);
+				System.out.println("msg received from server and its probably pong!");
+			
+				if(len == -1) {
+					System.out.println("Client has close the socket, exit");
+					break;
+				}
+				SimpellaNetServer.handleMsg(msg, sessionSocket);
 			} catch (SocketException E) {
 				System.out.println("Server closed the connection");
 				return;
@@ -105,12 +114,44 @@ public class SimpellaCommands {
 		pingH.setMsgType("ping");
 		pingH.initializeHeader();
 		pingH.setMsgId();
-		String s1 = new String(pingH.getHeader());
-		System.out.println("Pinged with Header = " + s1);
+		String guid = SimpellaRoutingTables.guidToString(pingH.getHeader());
+		SimpellaRoutingTables.generatedPingList.add(guid);
+		//String s1 = new String(pingH.getHeader());
+		System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
 		
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(pingH.getHeader());
+		return;
+	}
+
+	public void initializeQuery(String searchTxt) throws Exception
+	{
+		if(searchTxt.getBytes().length<=231){
+			byte[] payload = new byte[25+searchTxt.getBytes().length];
+			Header queryH = new Header();
+			queryH.setHeader(payload);
+			queryH.initializeHeader();
+			payload[23]=0;
+			payload[24]=0;
+			System.arraycopy(searchTxt.getBytes(), 0, payload, 25, searchTxt.getBytes().length);
+			queryH.setMsgType("query");
+			queryH.setMsgId();
+			//TODO set and validate message and payload
+			//String s1 = new String(queryH.getHeader());
+			System.out.println("Pinged with query = " + Arrays.toString(payload));
+			
+			System.out.println("In broadcast");
+			//TODO Below 3 code lines only for testing 
+			byte[] payload1 = new byte[payload.length];
+			System.arraycopy(payload, 25, payload1, 0, payload.length-25);//25 is fixed for query
+			SimpellaNetServer.broadcastQuery(payload, null);
+			//TODO file search
+			System.out.println("Initial query : "+new String(payload1));
+		} else{
+			System.out.println("Searchtext out of bound");
+		}	
+		
 		return;
 	}
 	
