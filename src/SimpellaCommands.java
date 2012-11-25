@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -79,21 +80,26 @@ public class SimpellaCommands {
 	
 
 	public void connectionListener(Socket sessionSocket) throws Exception {
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
-				sessionSocket.getInputStream()));
-		char[] replyToConnect = new char[512];
+		
+		DataInputStream inFromServer = new DataInputStream(
+				sessionSocket.getInputStream());
+		int len = 0;
+		byte[] msg = new byte[512];
 		//TODO send ping message
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
 			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
-		@SuppressWarnings("unused")
-		int len;
 		while (true) {
 			try {
-				len = inFromServer.read(replyToConnect);
+				len = inFromServer.read(msg, 0, 23);
 				System.out.println("msg received from server and its probably pong!");
 				// TODO handle the message
+				if(len == -1) {
+					System.out.println("Client has close the socket, exit");
+					break;
+				}
+				SimpellaNetServer.handleMsg(msg, sessionSocket);
 			} catch (SocketException E) {
 				System.out.println("Server closed the connection");
 				return;
