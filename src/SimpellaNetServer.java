@@ -1,9 +1,12 @@
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Arrays;
 
 /**
  * 
@@ -111,6 +114,35 @@ public class SimpellaNetServer {
 		}
 	}
 	
+	public void sendPong(Socket clientSocket, byte[] header){
+		//Reply with a pong on ping 
+
+		System.out.println("Ping received");
+		byte[] payload = new byte[37];
+		System.arraycopy(header, 0, payload, 0, 22);
+		Header h2 = new Header();
+		h2.initializeHeader();
+		h2.copyMsgId(header);
+		h2.setHeader(payload);
+		h2.setMsgType("pong");
+		//TODO files and size
+		byte[] filesShared = null;
+		byte[] kbsShared = null;
+		//No need to set MsgId as it should be same as ping					
+		h2.setPongPayload(clientSocket,payload,filesShared,kbsShared);
+		
+		DataOutputStream outToClient = null;
+		try {
+			outToClient = new DataOutputStream(
+					clientSocket.getOutputStream());
+			outToClient.write(payload);
+		} catch (IOException e) {
+			System.out.println("Socket Connection Error during pong write");
+		}
+		
+		System.out.println("Server replies with pong : " + Arrays.toString(payload));
+	}
+	
 	/**
 	 * TC pserver response.
 	 *
@@ -147,15 +179,21 @@ public class SimpellaNetServer {
 				//TODO check routing table if the ping is seen before,
 				String key = SimpellaRoutingTables.guidToString(header);
 				if(SimpellaRoutingTables.PingTable.containsKey(key)) {
-					// ignore Ping if the node has seen the request!
+					//TODO combine if and else to one if ignore Ping if the node has seen the request!
 				} else {
-					SimpellaRoutingTables.insertPingTable(key, clientSocket);
+					SimpellaRoutingTables.insertPingTable(key, clientSocket);					
 					if(header[17] > 1) {
 						header[17]--; //decrement TTL
 						header[18]++; //Increment hops
+						sendPong(clientSocket, header);
 						broadcastPing(header, clientSocket);
 					}
 				}
+			}
+			else if(header[16] == (byte)0x80){
+				BufferedReader d
+		          = new BufferedReader(new InputStreamReader(inFromClient));
+				System.out.println("Download query === "+new String(d.readLine()));
 			}
 			//TODO switch statement to process the input
 		}
