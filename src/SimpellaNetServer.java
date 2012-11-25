@@ -64,7 +64,6 @@ public class SimpellaNetServer {
 				try {
 					TCPserverResponse(clientSocket);
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -116,13 +115,11 @@ public class SimpellaNetServer {
 	
 	public void sendPong(Socket clientSocket, byte[] header){
 		//Reply with a pong on ping 
-
 		System.out.println("Ping received");
 		byte[] payload = new byte[37];
 		System.arraycopy(header, 0, payload, 0, 22);
 		Header h2 = new Header();
 		h2.initializeHeader();
-		h2.copyMsgId(header);
 		h2.setHeader(payload);
 		h2.setMsgType("pong");
 		//TODO files and size
@@ -130,7 +127,7 @@ public class SimpellaNetServer {
 		byte[] kbsShared = null;
 		//No need to set MsgId as it should be same as ping					
 		h2.setPongPayload(clientSocket,payload,filesShared,kbsShared);
-		
+
 		DataOutputStream outToClient = null;
 		try {
 			outToClient = new DataOutputStream(
@@ -144,7 +141,7 @@ public class SimpellaNetServer {
 	}
 	
 	/**
-	 * TC pserver response.
+	 * TCP server response.
 	 *
 	 * @param clientSocket the client socket
 	 */
@@ -173,34 +170,48 @@ public class SimpellaNetServer {
 			// and query-hit msgs are received
 			//TODO check headers for ping, pong, query or query-hit messages
 			byte[] header = new byte[23];
-			len = inFromClient. read(header, 0, 23);
+			len = inFromClient.read(header, 0, 23);
 			if (header[16] == (byte) 0x00) {
 				System.out.println("Ping received");
-				//TODO check routing table if the ping is seen before,
 				String key = SimpellaRoutingTables.guidToString(header);
 				if(SimpellaRoutingTables.PingTable.containsKey(key)) {
 					//TODO combine if and else to one if ignore Ping if the node has seen the request!
 				} else {
 					SimpellaRoutingTables.insertPingTable(key, clientSocket);
-					//TODO reply with a pong					
-
 					if(header[17] > 1) {
 						header[17]--; //decrement TTL
 						header[18]++; //Increment hops
-						sendPong(clientSocket, header);
 						broadcastPing(header, clientSocket);
+						//Set TTL and hops to default values
+						header[17] = (byte)0x07;
+						header[18] = (byte)0x00; //Increment hops
+						sendPong(clientSocket, header);
 					}
 				}
-			} //TODO else if header[16] == 0x01, forward
-			else if(header[16] == (byte)0x80){
+				//TODO else if header[16] == 0x01, forward	
+			} else if(header[16] == (byte)0x01){
+				System.out.println("Pong received");
+				String guid = SimpellaRoutingTables.guidToString(header);
+				if(SimpellaRoutingTables.generatedPingList.contains(guid)) {
+					// pong is for me
+					System.out.println("Pong received for self");
+					//TODO read contents and store them in a store
+				} else {
+					// forward the pong using the routing table
+					if(SimpellaRoutingTables.PingTable.containsKey(guid)) {
+						Socket pongFwdSocket = SimpellaRoutingTables.PingTable.get(guid);
+						System.out.println("Pong received for ip " + 
+								pongFwdSocket.getInetAddress().getHostAddress());
+						header[17]--; //decrement TTL
+						header[18]++; //Increment hops
+						sendPong(pongFwdSocket, header);	
+					}
+				}
+			} else if(header[16] == (byte)0x80){
 				BufferedReader d
 		          = new BufferedReader(new InputStreamReader(inFromClient));
-				System.out.println("Download query === " + new String(d.readLine()));
+				System.out.println("Download query == " + new String(d.readLine()));
 			}
-			//TODO switch statement to process the input
-			// if header[16] == pong message,
-			// See if the pong message was for this system. If not, 
-			// forware the pong according to the routing table
 		}
 	}
 	public void broadcastPing(byte[] pingMsg, Socket sender) throws Exception {

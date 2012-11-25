@@ -7,6 +7,7 @@ public class SimpellaRoutingTables {
 	public static Hashtable <String, Socket> QueryTable = new Hashtable<String, Socket>();
 	public static ConcurrentLinkedQueue<String> PingTableQueue = new ConcurrentLinkedQueue<String>();
 	public static ConcurrentLinkedQueue<String> QueryTableQueue = new ConcurrentLinkedQueue<String>();
+	public static ConcurrentLinkedQueue<String> generatedPingList = new ConcurrentLinkedQueue<String>();
 	
 	public static String guidToString(byte[] guid) {
 		String tmp = "";
