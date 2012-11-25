@@ -247,10 +247,12 @@ public class SimpellaNetServer {
 				System.out.println("Something has gone wrong!");
 				return;
 			}
+			System.out.println(len + " bytes of pong payload read");
 			if(SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				// pong is for me
 				System.out.println("Pong received for self: PayLoad = " + 
-						pongPayLoad[2] + pongPayLoad[3] + pongPayLoad[4] + pongPayLoad[5]);
+						"2: " + pongPayLoad[2] + " 3: " + pongPayLoad[3] + 
+						" 4: " + pongPayLoad[4] + " 5: " + pongPayLoad[5]);
 				return;
 				//TODO read contents and store them in a store
 			} else {
@@ -265,7 +267,7 @@ public class SimpellaNetServer {
 					try {
 						pongToClient = new DataOutputStream(
 								pongFwdSocket.getOutputStream());
-						pongToClient.write(header);
+						pongToClient.write(header, 0, 23);
 						pongToClient.write(pongPayLoad);
 					} catch (IOException e) {
 						System.out.println("Socket Connection Error during pong write");

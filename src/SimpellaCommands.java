@@ -82,18 +82,17 @@ public class SimpellaCommands {
 	public void connectionListener(Socket sessionSocket) throws Exception {
 		
 		int len = 0;
-		byte[] msg = new byte[512];
-		
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
 			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
 		while (true) {
 			try {
+				byte[] msg = new byte[512];
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
-				System.out.println("msg received from server and its probably pong!");
+				System.out.println("msg received from server length = " + len);
 			
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
