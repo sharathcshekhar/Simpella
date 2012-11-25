@@ -1,8 +1,6 @@
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-//TODO to be named SimpellaHeader.java
 
 
 

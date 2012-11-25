@@ -189,11 +189,11 @@ public class SimpellaNetServer {
 						broadcastPing(header, clientSocket);
 					}
 				}
-			}
+			} //TODO else if header[16] == 0x01, forward
 			else if(header[16] == (byte)0x80){
 				BufferedReader d
 		          = new BufferedReader(new InputStreamReader(inFromClient));
-				System.out.println("Download query === "+new String(d.readLine()));
+				System.out.println("Download query === " + new String(d.readLine()));
 			}
 			//TODO switch statement to process the input
 		}
