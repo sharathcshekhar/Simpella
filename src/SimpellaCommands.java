@@ -60,20 +60,6 @@ public class SimpellaCommands {
 						clientSocket));
 				clienListner_t.start();
 				System.out.println("spawned a listner in infnite loop!");
-				// TODO send Ping if its the first connection i.e.,
-				// if(outgoingConnectionCount == 1)send ping
-				Header pingH = new Header();
-				pingH.setMsgType("ping");
-				pingH.initializeHeader();
-				pingH.setMsgId();
-				System.out.println("Pinged with Header = "+Arrays.toString(pingH.getHeader()));
-				clientSocket = new Socket(connectionIP, connectionPort);
-				outToServer = new DataOutputStream(
-						clientSocket.getOutputStream());
-				outToServer.write(pingH.getHeader());
-				inFromServer.read(replyToConnect);
-				System.out.println("Server replied with pong : "+Arrays.toString(replyToConnect));
-				//Ping logic
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;
@@ -106,6 +92,7 @@ public class SimpellaCommands {
 		while (true) {
 			try {
 				len = inFromServer.read(replyToConnect);
+				System.out.println("msg received from server and its probably pong!");
 				// TODO handle the message
 			} catch (SocketException E) {
 				System.out.println("Server closed the connection");

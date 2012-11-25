@@ -115,7 +115,7 @@ public class SimpellaNetServer {
 	
 	public void sendPong(Socket clientSocket, byte[] header){
 		//Reply with a pong on ping 
-		System.out.println("Ping received");
+		System.out.println("Sending pong");
 		byte[] payload = new byte[37];
 		System.arraycopy(header, 0, payload, 0, 22);
 		Header h2 = new Header();
@@ -171,6 +171,10 @@ public class SimpellaNetServer {
 			//TODO check headers for ping, pong, query or query-hit messages
 			byte[] header = new byte[23];
 			len = inFromClient.read(header, 0, 23);
+			if(len == -1) {
+				System.out.println("Client has close the socket, exit");
+				break;
+			}
 			if (header[16] == (byte) 0x00) {
 				System.out.println("Ping received");
 				String key = SimpellaRoutingTables.guidToString(header);
@@ -202,9 +206,19 @@ public class SimpellaNetServer {
 						Socket pongFwdSocket = SimpellaRoutingTables.PingTable.get(guid);
 						System.out.println("Pong received for ip " + 
 								pongFwdSocket.getInetAddress().getHostAddress());
+						byte[] pongPayLoad = new byte[14];
+						len = inFromClient.read(pongPayLoad, 0, 14);
 						header[17]--; //decrement TTL
 						header[18]++; //Increment hops
-						sendPong(pongFwdSocket, header);	
+						DataOutputStream pongToClient = null;
+						try {
+							pongToClient = new DataOutputStream(
+									clientSocket.getOutputStream());
+							pongToClient.write(header);
+							pongToClient.write(pongPayLoad);
+						} catch (IOException e) {
+							System.out.println("Socket Connection Error during pong write");
+						}	
 					}
 				}
 			} else if(header[16] == (byte)0x80){
