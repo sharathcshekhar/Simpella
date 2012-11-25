@@ -94,6 +94,7 @@ public class SimpellaNetServer {
 			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP, inComingPort) || 
 					SimpellaConnectionStatus.isOutConnectionPresent(inComingIP, inComingPort)) {
 				System.out.println("Duplicate connection");
+				clientSocket.close();
 			} else {
 				if(SimpellaConnectionStatus.incomingConnectionCount < 3){
 					Thread tcp_serverResp_t = new Thread(new TCPserverResponseThread(
@@ -162,6 +163,7 @@ public class SimpellaNetServer {
 			SimpellaConnectionStatus.addIncomingConnection(clientSocket);
 		} else {
 			System.out.println("Unknown connection request, ignoring");
+			return;
 		}
 		while(true) {
 			byte[] header = new byte[23];
@@ -176,22 +178,39 @@ public class SimpellaNetServer {
 	public static void broadcastPing(byte[] pingMsg, Socket sender) throws Exception {
 		Socket clientSocket = null;
 		String clientIP = "";
+		System.out.println("In broadcast ping");
 		for(int i = 0; i < 3; i++) {
+			
+			clientSocket = 
+					SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
 			clientIP = 
-			SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
+					SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
+			int clientPort = SimpellaConnectionStatus.incomingConnectionList[i].remotePort;
 			if(!(clientIP.equals("")) && 
-					!(sender.getInetAddress().getHostAddress().equals(clientIP))) {
+					!((sender.getInetAddress().getHostAddress().equals(clientIP)) &&
+							(sender.getPort() == clientPort))) {
 				/* send to everyone apart from this node */
-				SimpellaCommands.sendPing(clientSocket);
+				System.out.println("sending ping to IP: " + clientIP + " Port = " + clientPort);
+				DataOutputStream outToServents = new DataOutputStream(
+						clientSocket.getOutputStream());
+				outToServents.write(pingMsg);
 			}
 		}
 		for(int j = 0; j < 3; j++) {
+			clientSocket = 
+					SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
+			
 			clientIP = 
 			SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
-			if(!(clientIP != null) && 
-					!(sender.getInetAddress().getHostAddress().equals(clientIP))) {
+			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[j].remotePort;
+			if(!(clientIP.equals("")) && 
+					!((sender.getInetAddress().getHostAddress().equals(clientIP)) &&
+							(sender.getPort() == clientPort))) {
+				System.out.println("sending ping to IP: " + clientIP + " Port = " + clientPort);
 				/* send to everyone apart from this node */
-				SimpellaCommands.sendPing(clientSocket);
+				DataOutputStream outToServents = new DataOutputStream(
+						clientSocket.getOutputStream());
+				outToServents.write(pingMsg);
 			}
 		}
 	}
@@ -230,7 +249,9 @@ public class SimpellaNetServer {
 			}
 			if(SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				// pong is for me
-				System.out.println("Pong received for self");
+				System.out.println("Pong received for self: PayLoad = " + 
+						pongPayLoad[2] + pongPayLoad[3] + pongPayLoad[4] + pongPayLoad[5]);
+				return;
 				//TODO read contents and store them in a store
 			} else {
 				// forward the pong using the routing table
@@ -243,7 +264,7 @@ public class SimpellaNetServer {
 					DataOutputStream pongToClient = null;
 					try {
 						pongToClient = new DataOutputStream(
-								sessionSocket.getOutputStream());
+								pongFwdSocket.getOutputStream());
 						pongToClient.write(header);
 						pongToClient.write(pongPayLoad);
 					} catch (IOException e) {

@@ -19,8 +19,8 @@ public class SimpellaConnectionStatus {
 //TODO check for only IP. Checking both IP and port # for testing purpose only	
 	public static boolean isInConnectionPresent(String inComingIP, int port) {
 		for(int i = 0; i < 3; i++) {
-			if (incomingConnectionList[i].remoteIP.equals(inComingIP)) {
-					//&&incomingConnectionList[i].remotePort == port) {
+			if (incomingConnectionList[i].remoteIP.equals(inComingIP) //{
+					&& incomingConnectionList[i].remotePort == port) {
 					return true;
 				}
 		}
@@ -37,6 +37,7 @@ public class SimpellaConnectionStatus {
 					incomingConnectionList[i].remoteIP = clientSocket.getInetAddress().getHostAddress();
 					incomingConnectionList[i].remotePort = clientSocket.getPort();
 					incomingConnectionCount++;
+					System.out.println("Added connection to incominConnectionList");
 					return;
 				}
 			}
@@ -50,6 +51,7 @@ public class SimpellaConnectionStatus {
 				incomingConnectionList[i].remotePort = 0;
 				incomingConnectionList[i].sessionSocket = null;
 				incomingConnectionCount--;
+				System.out.println("Added connection to outgoingConnectionList");
 				return;
 			}
 		}
@@ -59,8 +61,8 @@ public class SimpellaConnectionStatus {
 	public static boolean isOutConnectionPresent(String inComingIP, int port) {
 		// TODO Auto-generated method stub
 		for(int i = 0; i < 3; i++) {
-			if(outgoingConnectionList[i].remoteIP.equals(inComingIP) &&
-					outgoingConnectionList[i].remotePort == port) {
+			if(outgoingConnectionList[i].remoteIP.equals(inComingIP)
+					&& outgoingConnectionList[i].remotePort == port) {
 				return true;
 			}
 		}
@@ -76,6 +78,7 @@ public class SimpellaConnectionStatus {
 					outgoingConnectionList[i].remoteIP = clientSocket.getInetAddress().getHostAddress();
 					outgoingConnectionList[i].remotePort = clientSocket.getPort();
 					outgoingConnectionCount++;
+					System.out.println("Added connection to outgoingConnectionList");
 					return;
 				}
 			}
