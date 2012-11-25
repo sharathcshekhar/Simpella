@@ -72,9 +72,9 @@ public class SimpellaFileShareDB {
 	
 	String recurssiveGetFile(String rootDirectory, String filename, int hashcode) {
 		File dir = new File(rootDirectory);
-		String[] files = dir.list();
+		String[] filesInDir = dir.list();
 	
-		for (String tmpFileName : files) {
+		for (String tmpFileName : filesInDir) {
 			File file = new File(rootDirectory, tmpFileName);
 			if(file.isDirectory()) {
 				String result = recurssiveGetFile(file.getAbsolutePath(), filename, hashcode);
@@ -93,17 +93,17 @@ public class SimpellaFileShareDB {
 
 	Hashtable<Integer, String> recurssiveFileSearch(String[] keys, String rootDir) {
 		File dir = new File(rootDir);
-		String[] files = dir.list();
+		String[] filesInDir = dir.list();
 		Hashtable<Integer, String> results = new Hashtable<Integer, String>();
-		for (int i = 0; i < files.length; i++){
-			File filename = new File(rootDir, files[i]);
-			if(filename.isDirectory()) {
-				Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, filename.getAbsolutePath());
+		for (int i = 0; i < filesInDir.length; i++){
+			File file = new File(rootDir, filesInDir[i]);
+			if(file.isDirectory()) {
+				Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
 				results.putAll(tmp);
 			} else {
 				for(String s: keys) {
-					if(filename.getName().contains(s)) {
-						results.put(filename.hashCode(), filename.getName());
+					if(file.getName().contains(s)) {
+						results.put(file.hashCode(), file.getName());
 					}
 				}
 			}
