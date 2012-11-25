@@ -53,6 +53,8 @@ public class Simpella {
 				cmd.setConnectionIP(cmd_args[1]);
 				cmd.setConnectionPort(Integer.parseInt(cmd_args[2]));
 				cmd.connect();
+			} else if(cmd_args[0].equals("find")){
+				cmd.find(cmd_args[1]);
 			} else {
 				//TODO implement quit/bye
 				//TODO implement other commands
