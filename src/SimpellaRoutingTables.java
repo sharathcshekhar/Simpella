@@ -31,4 +31,16 @@ public class SimpellaRoutingTables {
 			PingTableQueue.add(key);
 		}
 	}
+	
+	public static void insertQueryTable(String key, Socket clientSocket){
+		if(QueryTable.size() < 160) {
+			QueryTable.put(key, clientSocket);
+			QueryTableQueue.add(key);
+		} else {
+			String keyToRemove = QueryTableQueue.remove();
+			QueryTable.remove(keyToRemove);
+			QueryTable.put(key, clientSocket);
+			QueryTableQueue.add(key);
+		}
+	}
 }

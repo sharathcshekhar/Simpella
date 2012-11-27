@@ -215,6 +215,47 @@ public class SimpellaNetServer {
 		}
 	}
 	
+	
+	
+			/**
+			 * Broadcast query.
+			 *
+			 * @param payload the payload
+			 * @param sender the sender
+			 * @throws Exception the exception
+			 */
+	public static void broadcastQuery(byte[] payload, Socket sender) throws Exception {
+		Socket clientSocket = null;
+		String clientIP = "";
+		//TODO file search
+		if(null == sender){
+			for(int i = 0; i < 3; i++) {
+				clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
+				clientIP = 
+				SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
+					System.out.println("broadcast incoming "+clientIP+" port="+SimpellaConnectionStatus.outgoingConnectionList[i].remotePort);
+					/* send to everyone apart from this node */
+					DataOutputStream outToServents = new DataOutputStream(clientSocket.getOutputStream());
+					outToServents.write(payload);
+					//SimpellaCommands.sendPing(clientSocket);
+			}
+			for(int j = 0; j < 3; j++) {
+				System.out.println("In broadcast outgoing "+j);
+				clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
+				clientIP = 
+				SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
+					System.out.println("broadcast outgoing "+clientIP+" port="+SimpellaConnectionStatus.outgoingConnectionList[j].remotePort);
+					DataOutputStream outToServents = new DataOutputStream(clientSocket.getOutputStream());
+					outToServents.write(payload);
+			}
+		}else{
+			broadcastPing(payload, sender);
+			return;
+			//TODO write query
+		}	//TODO generate query hit and set default hop n ttl values for query hit
+	}
+	
+
 	public static void handleMsg(byte[] header, Socket sessionSocket) throws Exception{
 		
 		DataInputStream inFromClient = new DataInputStream(
@@ -247,6 +288,7 @@ public class SimpellaNetServer {
 				System.out.println("Something has gone wrong!");
 				return;
 			}
+
 			System.out.println(len + " bytes of pong payload read");
 			if(SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				// pong is for me
@@ -277,6 +319,17 @@ public class SimpellaNetServer {
 		} else if(header[16] == (byte)0x80){
 			//TODO handle message
 			System.out.println("Query-message");
+			String queryid = SimpellaRoutingTables.guidToString(header);
+			if(SimpellaRoutingTables.QueryTable.containsKey(queryid)) {
+				//TODO combine if and else to one if ignore Ping if the node has seen the request!
+			} else {
+				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
+				if(header[17] > 1) {
+					header[17]--; //decrement TTL
+					header[18]++; //Increment hops
+					broadcastQuery(header, sessionSocket);
+				}
+			}
 		} else if(header[16] == (byte)0x81){
 			//TODO handle message
 			System.out.println("Query-hit message");

@@ -61,7 +61,7 @@ public class SimpellaConnectionStatus {
 	public static boolean isOutConnectionPresent(String inComingIP, int port) {
 		// TODO Auto-generated method stub
 		for(int i = 0; i < 3; i++) {
-			if(outgoingConnectionList[i].remoteIP.equals(inComingIP)
+			if(outgoingConnectionList[i].remoteIP.equals(inComingIP) 
 					&& outgoingConnectionList[i].remotePort == port) {
 				return true;
 			}

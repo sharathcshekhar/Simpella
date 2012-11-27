@@ -88,12 +88,11 @@ public class SimpellaCommands {
 		}
 		while (true) {
 			try {
-				byte[] msg = new byte[512];
+			byte[] msg = new byte[512];
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
-				System.out.println("msg received from server length = " + len);
-			
+				System.out.println("msg received from server and its probably pong!");
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;
@@ -122,6 +121,36 @@ public class SimpellaCommands {
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(pingH.getHeader());
+		return;
+	}
+
+	public void initializeQuery(String searchTxt) throws Exception
+	{
+		if(searchTxt.getBytes().length<=231){
+			byte[] payload = new byte[25+searchTxt.getBytes().length];
+			Header queryH = new Header();
+			queryH.setHeader(payload);
+			queryH.initializeHeader();
+			payload[23]=0;
+			payload[24]=0;
+			System.arraycopy(searchTxt.getBytes(), 0, payload, 25, searchTxt.getBytes().length);
+			queryH.setMsgType("query");
+			queryH.setMsgId();
+			//TODO set and validate message and payload
+			//String s1 = new String(queryH.getHeader());
+			System.out.println("Pinged with query = " + Arrays.toString(payload));
+			
+			System.out.println("In broadcast");
+			//TODO Below 3 code lines only for testing 
+			byte[] payload1 = new byte[payload.length];
+			System.arraycopy(payload, 25, payload1, 0, payload.length-25);//25 is fixed for query
+			SimpellaNetServer.broadcastQuery(payload, null);
+			//TODO file search
+			System.out.println("Initial query : "+new String(payload1));
+		} else{
+			System.out.println("Searchtext out of bound");
+		}	
+		
 		return;
 	}
 
