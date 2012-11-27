@@ -1,6 +1,7 @@
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Hashtable;
 
 
 
@@ -150,8 +151,19 @@ public class Header {
 		//payload[25]=search.getBytes();
 	}
 	//TODO
-	public void setQueryHitPayload(){
-	
+	public void setQueryHitPayload(Hashtable<Integer, String> searchResults) {
+		//byte[] payload;
+		/*
+		 * payload[0] = no. of files matched
+		 * payload[1-2] = port
+		 * payload[3-6] = ip
+		 * payload[7 - 10] = speed = 10,000
+		 * FOR ALL files
+		 * payload[11 - 14] = file index
+		 * payload[15 - 18] = file_size
+		 * payload[18 - ] = file name 
+		 * payload[last 16 byte] = unique ID of the servent
+		 */
 	}
 
 }

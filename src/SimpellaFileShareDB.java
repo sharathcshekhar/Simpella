@@ -1,5 +1,5 @@
 import java.io.File;
-import java.util.Hashtable;
+import java.util.ArrayList;
 
 /**
  * 
@@ -36,10 +36,11 @@ public class SimpellaFileShareDB {
 		recurssiveScanDir(sharedDirectory);
 	}
 	
-	public Hashtable<Integer, String> getMatchingFiles(String pattern)
+	public ArrayList<Object> getMatchingFiles(String pattern)
 	{
 		String[] keys = pattern.split(" ");
-		Hashtable<Integer, String> results = recurssiveFileSearch(keys, sharedDirectory);
+		//Hashtable<Integer, String> results = recurssiveFileSearch(keys, sharedDirectory);
+		ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
 		return results;
 	}
 	
@@ -53,7 +54,7 @@ public class SimpellaFileShareDB {
 	{
 		File dir = new File(directory);
 		String[] files = dir.list();
-		for (int i = 0; i < dir.length(); i++){
+		for (int i = 0; i < files.length; i++){
 			File filename = new File(directory, files[i]);
 			if(filename.isDirectory()) {
 				recurssiveScanDir(filename.toString());
@@ -91,19 +92,25 @@ public class SimpellaFileShareDB {
 		return null;
 	}
 
-	Hashtable<Integer, String> recurssiveFileSearch(String[] keys, String rootDir) {
+	ArrayList<Object> recurssiveFileSearch(String[] keys, String rootDir) {
 		File dir = new File(rootDir);
 		String[] filesInDir = dir.list();
-		Hashtable<Integer, String> results = new Hashtable<Integer, String>();
+		//Hashtable<Integer, String> results = new Hashtable<Integer, String>();
+		ArrayList<Object> results = new ArrayList<Object>();
+				
 		for (int i = 0; i < filesInDir.length; i++){
 			File file = new File(rootDir, filesInDir[i]);
 			if(file.isDirectory()) {
-				Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
-				results.putAll(tmp);
+				//Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
+				ArrayList<Object> tmp = new ArrayList<Object>();
+				results.addAll(tmp);
 			} else {
 				for(String s: keys) {
 					if(file.getName().contains(s)) {
-						results.put(file.hashCode(), file.getName());
+						//results.put(file.hashCode(), file.getName());
+						results.add(file.hashCode());
+						results.add(file.length());
+						results.add(file.getName());
 					}
 				}
 			}

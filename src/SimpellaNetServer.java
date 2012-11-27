@@ -1,10 +1,14 @@
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * 
@@ -15,6 +19,16 @@ import java.util.Arrays;
  * 
  */
 public class SimpellaNetServer {
+	/*
+	 * TODO change in architecture:
+	 * Have a queue of size 3 objects of type SimpellaServerResponse
+	 * Every time a connection is received, a new object is created
+	 * and store in this queue, if the size is not already greater than 3
+	 * Before closing the socket connection, remove the item from the
+	 * queue. All future communication with this object shall be made
+	 * through calling private variables.
+	 */
+	
 	int port;
 	boolean status;
 
@@ -214,9 +228,6 @@ public class SimpellaNetServer {
 			}
 		}
 	}
-	
-	
-	
 			/**
 			 * Broadcast query.
 			 *
@@ -249,6 +260,7 @@ public class SimpellaNetServer {
 					outToServents.write(payload);
 			}
 		}else{
+			//This is actually broadcast packet!
 			broadcastPing(payload, sender);
 			return;
 			//TODO write query
@@ -278,7 +290,7 @@ public class SimpellaNetServer {
 				}
 			}
 			//TODO else if header[16] == 0x01, forward	
-		} else if(header[16] == (byte)0x01){
+		} else if(header[16] == (byte)0x01) {
 			System.out.println("Pong received");
 			String guid = SimpellaRoutingTables.guidToString(header);
 			//Read the pong payload
@@ -323,6 +335,10 @@ public class SimpellaNetServer {
 			if(SimpellaRoutingTables.QueryTable.containsKey(queryid)) {
 				//TODO combine if and else to one if ignore Ping if the node has seen the request!
 			} else {
+				//TODO see if you have an answer to the queried string
+				// if header[19-22] > 256, drop the packet!
+				//if not read those many number of bytes.
+				
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				if(header[17] > 1) {
 					header[17]--; //decrement TTL
@@ -341,5 +357,76 @@ public class SimpellaNetServer {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+	
+	public void replyWithQueryHit(Socket sessionSocket) throws IOException {
+		DataInputStream inFromClient = new DataInputStream(
+				sessionSocket.getInputStream());
+		byte[] queryString = new byte[256];
+		byte[] querySpeed = new byte[2];
+		inFromClient.read(querySpeed, 0, 2);
+		//ignore querySpeed for Simpella
+		int len = inFromClient.read(queryString, 0, 256);
+		if (queryString[len - 1] != (byte)0x00) {
+			System.out.println("Not null terminatd String, error!");
+		}
+		String searchString = new String(queryString);
+		System.out.println("Search String is " + searchString);
+		SimpellaFileShareDB db = new SimpellaFileShareDB();
+		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
+		Iterator<Object> itr = searchResults.iterator();
+		ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
+		
+		if(!searchResults.isEmpty()) {
+			//TODO Reply with a query-hit
+			byte[] tmp = new byte[4];
+			int offset = 0;
+			//write no. of files to 1st byte
+			tmp[0] = (byte) (searchResults.size()/3);
+			payLoad.write(tmp, offset, 1);
+			offset += 1;
+			//byte 1-2 is file download Port, 8888 for now
+			tmp = SimpellaUtils.toBytes(8888);
+			payLoad.write(tmp, offset, 2);
+			offset += 2;
+			//TODO This has to be replaced with the IP address of the 192.168.1.2
+			InetAddress ip = InetAddress.getByName("192.168.1.2");
+			byte[] ip_bytes = ip.getAddress();
+			payLoad.write(ip_bytes, offset, 4);
+			offset =+ 4;
+			//Speed, set arbitrarily to 10000
+			tmp = SimpellaUtils.toBytes(10000);
+			payLoad.write(tmp, offset, 4);
+			offset += 4;
+			
+			while(itr.hasNext()){
+				Integer fileIndex = (Integer)itr.next();
+				Integer size = (Integer)itr.next();
+				String filename = (String)itr.next();
+				
+				tmp = SimpellaUtils.toBytes(fileIndex.intValue());
+				payLoad.write(tmp, offset, 4);
+				offset += 4;
+				
+				tmp = SimpellaUtils.toBytes(size.intValue());
+				payLoad.write(tmp, offset, 4);
+				offset += 4;
+				
+				payLoad.write(filename.getBytes(), offset, filename.length());
+				offset += filename.length();
+			}
+			//TODO this has to be a constant value stored in 
+			// a static variable somewhere.
+			byte[] serventID = new byte[16];
+			payLoad.write(serventID, offset, 16);
+			offset += 16;	
+			byte[] payLoadArray = new byte [offset];
+			payLoadArray = payLoad.toByteArray();
+			DataOutputStream outToClient = new DataOutputStream(
+					sessionSocket.getOutputStream());
+			//outToClient.write(header, 23, offset);
+			outToClient.write(payLoadArray, 23, offset);
+		}
+		
 	}
 }

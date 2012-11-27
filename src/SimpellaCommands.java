@@ -1,8 +1,6 @@
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.Charset;
@@ -41,9 +39,14 @@ public class SimpellaCommands {
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(connect_cmd.getBytes());
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
-				clientSocket.getInputStream()));
-		char[] replyToConnect = new char[25];
+//		changed to DataInputStream  and char[] to byte[]
+//		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
+//				clientSocket.getInputStream()));
+//		char[] replyToConnect = new char[25];
+
+		DataInputStream inFromServer = new DataInputStream(clientSocket.getInputStream());
+		
+		byte[] replyToConnect = new byte[25];
 		try {
 			int len = inFromServer.read(replyToConnect);
 
@@ -88,7 +91,7 @@ public class SimpellaCommands {
 		}
 		while (true) {
 			try {
-			byte[] msg = new byte[512];
+			byte[] msg = new byte[24];
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
