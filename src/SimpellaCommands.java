@@ -129,27 +129,32 @@ public class SimpellaCommands {
 
 	public void initializeQuery(String searchTxt) throws Exception
 	{
-		if(searchTxt.getBytes().length<=231){
-			byte[] payload = new byte[25+searchTxt.getBytes().length];
+		if (searchTxt.getBytes().length <= 231) {
+			byte[] payload = new byte[23 + 2 + searchTxt.getBytes().length + 1];
 			Header queryH = new Header();
 			queryH.setHeader(payload);
 			queryH.initializeHeader();
+			//TODO set the length of the payload more elegantly :)
+			payload[19] = (byte)0x00;
+			payload[20] = (byte)0x00;
+			payload[21] = (byte)0x00;
+			payload[22] = (byte)(searchTxt.getBytes().length + 1);
+			
+			// minimum speed, set to 0 for simpella
 			payload[23]=0;
 			payload[24]=0;
-			System.arraycopy(searchTxt.getBytes(), 0, payload, 25, searchTxt.getBytes().length);
+			//TODO use ByteArrayOutputStream			
+			// ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
+			System.arraycopy((searchTxt + '\0').getBytes(), 0, payload, 25, searchTxt.getBytes().length + 1);
 			queryH.setMsgType("query");
 			queryH.setMsgId();
 			//TODO set and validate message and payload
 			//String s1 = new String(queryH.getHeader());
 			System.out.println("Pinged with query = " + Arrays.toString(payload));
 			
-			System.out.println("In broadcast");
-			//TODO Below 3 code lines only for testing 
-			byte[] payload1 = new byte[payload.length];
-			System.arraycopy(payload, 25, payload1, 0, payload.length-25);//25 is fixed for query
 			SimpellaNetServer.broadcastQuery(payload, null);
 			//TODO file search
-			System.out.println("Initial query : "+new String(payload1));
+			System.out.println("Initial query : " + new String(payload));
 		} else{
 			System.out.println("Searchtext out of bound");
 		}	

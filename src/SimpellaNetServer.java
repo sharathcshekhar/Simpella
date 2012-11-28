@@ -338,7 +338,17 @@ public class SimpellaNetServer {
 				//TODO see if you have an answer to the queried string
 				// if header[19-22] > 256, drop the packet!
 				//if not read those many number of bytes.
-				
+				byte[] tmp = new byte[4];
+				tmp[0] = header[19];
+				tmp[1] = header[20];
+				tmp[2] = header[20];
+				tmp[3] = header[22];
+				int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
+				if(payLoadLen > 256) {
+					//report error
+					return;
+				}
+				replyWithQueryHit(sessionSocket, payLoadLen);
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				if(header[17] > 1) {
 					header[17]--; //decrement TTL
@@ -348,7 +358,14 @@ public class SimpellaNetServer {
 			}
 		} else if(header[16] == (byte)0x81){
 			//TODO handle message
-			System.out.println("Query-hit message");
+			byte[] tmp = new byte[4];
+			tmp[0] = header[19];
+			tmp[1] = header[20];
+			tmp[2] = header[20];
+			tmp[3] = header[22];
+			int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
+			System.out.println("Query-hit message received with payload len = " + payLoadLen);
+			//TODO initiate file download
 		}
 	}
 	public int getPort() {
@@ -359,21 +376,34 @@ public class SimpellaNetServer {
 		this.port = port;
 	}
 	
-	public void replyWithQueryHit(Socket sessionSocket) throws IOException {
+	public static void replyWithQueryHit(Socket sessionSocket, int packetLen) throws IOException {
 		DataInputStream inFromClient = new DataInputStream(
 				sessionSocket.getInputStream());
-		byte[] queryString = new byte[256];
+		byte[] queryString = new byte[packetLen];
 		byte[] querySpeed = new byte[2];
 		inFromClient.read(querySpeed, 0, 2);
 		//ignore querySpeed for Simpella
-		int len = inFromClient.read(queryString, 0, 256);
+		int len = inFromClient.read(queryString, 0, packetLen);
 		if (queryString[len - 1] != (byte)0x00) {
 			System.out.println("Not null terminatd String, error!");
 		}
 		String searchString = new String(queryString);
 		System.out.println("Search String is " + searchString);
-		SimpellaFileShareDB db = new SimpellaFileShareDB();
-		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
+		Header queryHeader = new Header();
+		queryHeader.initializeHeader();
+		queryHeader.setMsgType("queryhit");
+		//SimpellaFileShareDB db = new SimpellaFileShareDB();
+		//ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
+		/* For testing: */
+		
+		ArrayList<Object> searchResults = new ArrayList<Object>();
+		searchResults.add(12345);
+		searchResults.add(100);
+		searchResults.add("one");
+		searchResults.add(67890);
+		searchResults.add(200);
+		searchResults.add("two");
+		//end of testing
 		Iterator<Object> itr = searchResults.iterator();
 		ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
 		
@@ -412,8 +442,8 @@ public class SimpellaNetServer {
 				payLoad.write(tmp, offset, 4);
 				offset += 4;
 				
-				payLoad.write(filename.getBytes(), offset, filename.length());
-				offset += filename.length();
+				payLoad.write((filename + '\0').getBytes(), offset, filename.length() + 1);
+				offset += filename.length() + 1;
 			}
 			//TODO this has to be a constant value stored in 
 			// a static variable somewhere.
@@ -425,7 +455,15 @@ public class SimpellaNetServer {
 			DataOutputStream outToClient = new DataOutputStream(
 					sessionSocket.getOutputStream());
 			//outToClient.write(header, 23, offset);
-			outToClient.write(payLoadArray, 23, offset);
+			byte[] queryHeader1 = queryHeader.getHeader();
+			queryHeader1[19] = (byte) 0x00; 
+			queryHeader1[20] = (byte) 0x00;
+			queryHeader1[21] = (byte) 0x00;
+			queryHeader1[22] = (byte) 51;
+			//write header
+			outToClient.write(queryHeader1, 0, 23);
+			//write payload
+			outToClient.write(payLoadArray, 0, offset);
 		}
 		
 	}
