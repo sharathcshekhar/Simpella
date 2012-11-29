@@ -501,10 +501,22 @@ public class SimpellaNetServer {
 		//retain the msgID in query header in the query-hit header
 		queryHitHeader.setMsgId(queryHeader);
 		queryHitHeader.setMsgType("queryhit");
-		//SimpellaFileShareDB db = new SimpellaFileShareDB();
-		//ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
+		SimpellaFileShareDB db = new SimpellaFileShareDB();
+		db.setSharedDirectory("/home/sharath/simpella_share");
+		System.out.println("In replyWithQuery, searchString " + searchString);
+		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
+		Iterator<Object> itr1 = searchResults.iterator();
+		while(itr1.hasNext()) {
+			Integer fileIndex = (Integer)itr1.next();
+			Long size = (Long)itr1.next();
+			String filename = (String)itr1.next();
+			System.out.println("File index = " + fileIndex + " size in long " +
+					size + " size in int = " + size.intValue() + " filename " + filename);			
+		}
+		System.out.println("bits used to represent size = " + Long.SIZE);
 		/* For testing: */
 		System.out.println("replying with a query-hit");
+		/*
 		ArrayList<Object> searchResults = new ArrayList<Object>();
 		searchResults.add(12345);
 		searchResults.add(100);
@@ -513,7 +525,9 @@ public class SimpellaNetServer {
 		searchResults.add(200);
 		searchResults.add("two");
 		//end of testing
+		*/
 		Iterator<Object> itr = searchResults.iterator();
+		
 		ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
 		
 		if(!searchResults.isEmpty()) {
@@ -544,7 +558,7 @@ public class SimpellaNetServer {
 			
 			while(itr.hasNext()){
 				Integer fileIndex = (Integer)itr.next();
-				Integer size = (Integer)itr.next();
+				Long size = (Long)itr.next();
 				String filename = (String)itr.next();
 				
 				tmp = SimpellaUtils.toBytes(fileIndex.intValue());
@@ -569,10 +583,12 @@ public class SimpellaNetServer {
 					sessionSocket.getOutputStream());
 			//outToClient.write(header, 23, offset);
 			byte[] queryHeaderBytes = queryHitHeader.getHeader();
-			queryHeaderBytes[19] = (byte) 0x00; 
-			queryHeaderBytes[20] = (byte) 0x00;
-			queryHeaderBytes[21] = (byte) 0x00;
-			queryHeaderBytes[22] = (byte) 51;
+			
+			byte[] payLoadLength = SimpellaUtils.toBytes(offset);
+			queryHeaderBytes[19] = payLoadLength[0]; 
+			queryHeaderBytes[20] = payLoadLength[1];
+			queryHeaderBytes[21] = payLoadLength[2];
+			queryHeaderBytes[22] = payLoadLength[3];
 			for(int k = 0; k < payLoadArray.length; k ++) {
 				System.out.println("Query: payLoadArray[" + k + "] = " + payLoadArray[k]);
 			}

@@ -38,7 +38,11 @@ public class SimpellaFileShareDB {
 	
 	public ArrayList<Object> getMatchingFiles(String pattern)
 	{
-		String[] keys = pattern.split(" ");
+		String[] keys = pattern.split("\\s+");
+		System.out.println("In getMatchingFiles, string = " + pattern);
+		for(String tmp : keys) {
+			System.out.println("keys = " + tmp);
+		}
 		//Hashtable<Integer, String> results = recurssiveFileSearch(keys, sharedDirectory);
 		ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
 		return results;
@@ -100,13 +104,18 @@ public class SimpellaFileShareDB {
 				
 		for (int i = 0; i < filesInDir.length; i++){
 			File file = new File(rootDir, filesInDir[i]);
+			System.out.println("Checking filename " + file.getName());
 			if(file.isDirectory()) {
+				System.out.println("if dir");
 				//Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
-				ArrayList<Object> tmp = new ArrayList<Object>();
+				ArrayList<Object> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
 				results.addAll(tmp);
 			} else {
-				for(String s: keys) {
-					if(file.getName().contains(s)) {
+				System.out.println("Else.. ");
+				for(String s : keys) {
+					System.out.println("Checking if filename " + file.getName() + " contains " 
+							+ s + " result = " + file.getName().contains(s.trim()));
+					if(file.getName().contains(s.trim())) {
 						//results.put(file.hashCode(), file.getName());
 						results.add(file.hashCode());
 						results.add(file.length());
