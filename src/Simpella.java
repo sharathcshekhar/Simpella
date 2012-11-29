@@ -18,6 +18,7 @@ public class Simpella {
 	public static void main(String[] args) throws Exception {
 
 		SimpellaNetServer NetSrv = new SimpellaNetServer();
+		//SimpellaFileServer sf = new SimpellaFileServer(); TODO
 		int port = 6346;
 		if(args.length == 1) {
 			port = Integer.parseInt(args[0]);
@@ -31,6 +32,17 @@ public class Simpella {
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
+		
+		
+		/*
+		 * TODO change in architecture:
+		 * Have a queue of size 3 objects of type SimpellaCommands
+		 * Every time a connect command is called, a new object is created
+		 * and store in this queue, if the size is not already greater than 3
+		 * Before closing the socket connection, remove the item from the
+		 * queue. All future communication with this object shall be made
+		 * through calling private variables.
+		 */
 		while (true) {
 			System.out.print("Simpella> ");
 			String usrInput = null;

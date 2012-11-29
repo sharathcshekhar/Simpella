@@ -1,7 +1,6 @@
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Arrays;
@@ -39,9 +38,14 @@ public class SimpellaCommands {
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(connect_cmd.getBytes());
-		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
-				clientSocket.getInputStream()));
-		char[] replyToConnect = new char[25];
+//		changed to DataInputStream  and char[] to byte[]
+//		BufferedReader inFromServer = new BufferedReader(new InputStreamReader(
+//				clientSocket.getInputStream()));
+//		char[] replyToConnect = new char[25];
+
+		DataInputStream inFromServer = new DataInputStream(clientSocket.getInputStream());
+		
+		byte[] replyToConnect = new byte[25];
 		try {
 			int len = inFromServer.read(replyToConnect);
 
@@ -80,20 +84,17 @@ public class SimpellaCommands {
 	public void connectionListener(Socket sessionSocket) throws Exception {
 		
 		int len = 0;
-		
-		
 		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
 			System.out.println("Sending ping message");
 			sendPing(sessionSocket);
 		}
 		while (true) {
 			try {
-			byte[] msg = new byte[512];
+			byte[] msg = new byte[24];
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
-				System.out.println("msg received from server and its probably pong!");
-			
+				System.out.println("msg received from server");
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;
@@ -127,34 +128,75 @@ public class SimpellaCommands {
 
 	public void initializeQuery(String searchTxt) throws Exception
 	{
-		if(searchTxt.getBytes().length<=231){
-			byte[] payload = new byte[25+searchTxt.getBytes().length];
+		if (searchTxt.getBytes().length <= 231) {
 			Header queryH = new Header();
-			queryH.setHeader(payload);
 			queryH.initializeHeader();
-			payload[23]=0;
-			payload[24]=0;
-			System.arraycopy(searchTxt.getBytes(), 0, payload, 25, searchTxt.getBytes().length);
-			queryH.setMsgType("query");
 			queryH.setMsgId();
-			//TODO set and validate message and payload
-			//String s1 = new String(queryH.getHeader());
-			System.out.println("Pinged with query = " + Arrays.toString(payload));
+			queryH.setMsgType("query");
+			byte[] queryHeader = queryH.getHeader();
+			//TODO set the length of the payload more elegantly :)
+			queryHeader[19] = (byte)0x00;
+			queryHeader[20] = (byte)0x00;
+			queryHeader[21] = (byte)0x00;
+			queryHeader[22] = (byte)(searchTxt.getBytes().length + 1); // +1 for \0
 			
-			System.out.println("In broadcast");
-			//TODO Below 3 code lines only for testing 
-			byte[] payload1 = new byte[payload.length];
-			System.arraycopy(payload, 25, payload1, 0, payload.length-25);//25 is fixed for query
-			SimpellaNetServer.broadcastQuery(payload, null);
-			//TODO file search
-			System.out.println("Initial query : "+new String(payload1));
+			// minimum speed, set to 0 for simpella
+			byte[] querySpeed = new byte[2];
+			querySpeed[0] = 0; //minimum speed, just set it to 0
+			querySpeed[1] = 0;
+
+			ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
+			payLoad.write(querySpeed);
+			payLoad.write((searchTxt + '\0').getBytes()); //make it a null terminated string
+			
+			String guid = SimpellaRoutingTables.guidToString(queryHeader);
+			SimpellaRoutingTables.generatedQueryList.add(guid);
+			SimpellaNetServer.broadcastQuery(queryHeader, payLoad.toByteArray(), null);
+			
 		} else{
 			System.out.println("Searchtext out of bound");
 		}	
 		
 		return;
 	}
+
 	
+
+	//TODO send_query()
+	//TODO send_query_hit()
+	//TODO ping() as a wrapper around 
+	/**
+	 * Find.
+	 *
+	 * @param searchTxt the search txt
+	 
+	public void find(String searchTxt){
+		byte[] payload = new byte[4096];
+		if (searchTxt.getBytes(Charset.forName("UTF-8")).length < 4063) {
+
+			Header queryH = new Header();
+			queryH.setHeader(payload);
+			queryH.initializeHeader();
+			queryH.setMsgType("query");
+			queryH.setMsgId();
+			// TODO set and validate message and payload
+			String s1 = new String(queryH.getHeader());
+			System.out.println("Query message with search string = " + s1);
+			DataOutputStream outToServer;
+			try {
+				outToServer = new DataOutputStream(
+						clientSocket.getOutputStream());
+				outToServer.write(queryH.getHeader());
+			} catch (IOException e) {
+				System.out.println("Connection error during find");
+			}
+		} else {
+			System.out.println("Invalid searchtext");
+		}
+		return;
+		//TODO write query
+	}	
+*/
 
 	public int getConnectionPort() {
 		return connectionPort;

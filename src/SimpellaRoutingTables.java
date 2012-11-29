@@ -8,6 +8,7 @@ public class SimpellaRoutingTables {
 	public static ConcurrentLinkedQueue<String> PingTableQueue = new ConcurrentLinkedQueue<String>();
 	public static ConcurrentLinkedQueue<String> QueryTableQueue = new ConcurrentLinkedQueue<String>();
 	public static ConcurrentLinkedQueue<String> generatedPingList = new ConcurrentLinkedQueue<String>();
+	public static ConcurrentLinkedQueue<String> generatedQueryList = new ConcurrentLinkedQueue<String>();
 	
 	public static String guidToString(byte[] guid) {
 		String tmp = "";
