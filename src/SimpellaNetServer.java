@@ -233,45 +233,60 @@ public class SimpellaNetServer {
 			 * Broadcast query.
 			 *
 			 * @param payload the payload
+			 * @param queryPayLoad 
 			 * @param sender the sender
 			 * @throws Exception the exception
 			 */
-	public static void broadcastQuery(byte[] payload, Socket sender) throws Exception {
+	public static void broadcastQuery(byte[] header, byte[] queryPayLoad,
+			Socket sender) throws Exception {
 		Socket clientSocket = null;
 		String clientIP = "";
-		//TODO file search
-		if(null == sender){
-			for(int i = 0; i < 3; i++) {
-				clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
-				clientIP = 
-				SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
-				if(!clientIP.equals("")) {
-					System.out.println("broadcast incoming "+ clientIP + " port = " + 
-							SimpellaConnectionStatus.outgoingConnectionList[i].remotePort);
+		
+		for (int i = 0; i < 3; i++) {
+			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
+			clientIP = SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
+			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[i].remotePort;
+			
+			if (!clientIP.equals("")) {
+				if ((sender == null)
+						|| !((sender.getInetAddress().getHostAddress()
+								.equals(clientIP)) && (sender.getPort() == clientPort))) {
+					System.out.println("broadcast incoming " + clientIP
+							+ " port = " + clientPort);
 					/* send to everyone apart from this node */
-					DataOutputStream outToServents = new DataOutputStream(clientSocket.getOutputStream());
-					outToServents.write(payload);
+					DataOutputStream outToServents = new DataOutputStream(
+							clientSocket.getOutputStream());
+					outToServents.write(header);
+					outToServents.write(queryPayLoad);
 				}
 			}
-			for(int j = 0; j < 3; j++) {
-				System.out.println("In broadcast outgoing "+j);
-				clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
-				clientIP = 
-				SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
-				if(!clientIP.equals("")) {
-					System.out.println("broadcast outgoing "+clientIP+" port="+SimpellaConnectionStatus.outgoingConnectionList[j].remotePort);
-					DataOutputStream outToServents = new DataOutputStream(clientSocket.getOutputStream());
-					outToServents.write(payload);
-				}
-			}
-		}else{
-			//This is actually broadcast packet!
-			broadcastPing(payload, sender);
-			return;
-		}	
-	}
-	
+		}
+		for (int j = 0; j < 3; j++) {
+			System.out.println("In broadcast outgoing " + j);
+			clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
+			clientIP = SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
+			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[j].remotePort;
+			
+			if (!clientIP.equals("")) {
+				if ((sender == null)
+						|| !((sender.getInetAddress().getHostAddress()
+								.equals(clientIP)) && (sender.getPort() == clientPort))) {
 
+					System.out.println("broadcast incoming " + clientIP
+							+ " port = " + clientPort);
+					/* send to everyone apart from this node
+					 * If sender is null, send it to all 
+					 */
+					DataOutputStream outToServents = new DataOutputStream(
+							clientSocket.getOutputStream());
+					outToServents.write(header);
+					outToServents.write(queryPayLoad);
+				}
+			}
+		}
+	} 
+	
+	
 	public static void handleMsg(byte[] header, Socket sessionSocket) throws Exception{
 		
 		DataInputStream inFromClient = new DataInputStream(
@@ -345,19 +360,33 @@ public class SimpellaNetServer {
 				byte[] tmp = new byte[4];
 				tmp[0] = header[19];
 				tmp[1] = header[20];
-				tmp[2] = header[20];
+				tmp[2] = header[21];
 				tmp[3] = header[22];
 				int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
 				if(payLoadLen > 256) {
 					//report error
 					return;
 				}
-				replyWithQueryHit(sessionSocket, payLoadLen);
+				byte[] queryPayLoad = new byte[payLoadLen];
+				int len = inFromClient.read(queryPayLoad, 0, payLoadLen);
+				ByteArrayInputStream msg = new ByteArrayInputStream(queryPayLoad);
+				byte[] querySpeed = new byte[2];
+				msg.read(querySpeed, 0, 2);
+				byte[] rawQueryString = new byte[payLoadLen - 2];
+				//ignore querySpeed for Simpella
+				len = msg.read(rawQueryString , 0, payLoadLen - 2);
+				if (rawQueryString[len - 1] != (byte)0x00) {
+					System.out.println("Not null terminatd String, error!");
+				}
+				String searchString = new String(rawQueryString);
+				System.out.println("Search String is " + searchString);
+				
+				replyWithQueryHit(sessionSocket, searchString);
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				if(header[17] > 1) {
 					header[17]--; //decrement TTL
 					header[18]++; //Increment hops
-					broadcastQuery(header, sessionSocket);
+					broadcastQuery(header, queryPayLoad, sessionSocket);
 				}
 			}
 		} else if(header[16] == (byte)0x81){
@@ -453,19 +482,7 @@ public class SimpellaNetServer {
 		this.port = port;
 	}
 	
-	public static void replyWithQueryHit(Socket sessionSocket, int packetLen) throws IOException {
-		DataInputStream inFromClient = new DataInputStream(
-				sessionSocket.getInputStream());
-		byte[] queryString = new byte[packetLen];
-		byte[] querySpeed = new byte[2];
-		inFromClient.read(querySpeed, 0, 2);
-		//ignore querySpeed for Simpella
-		int len = inFromClient.read(queryString, 0, packetLen);
-		if (queryString[len - 1] != (byte)0x00) {
-			System.out.println("Not null terminatd String, error!");
-		}
-		String searchString = new String(queryString);
-		System.out.println("Search String is " + searchString);
+	public static void replyWithQueryHit(Socket sessionSocket, String searchString) throws IOException {
 		Header queryHeader = new Header();
 		queryHeader.initializeHeader();
 		queryHeader.setMsgType("queryhit");

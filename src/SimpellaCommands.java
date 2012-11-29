@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
@@ -128,32 +129,30 @@ public class SimpellaCommands {
 	public void initializeQuery(String searchTxt) throws Exception
 	{
 		if (searchTxt.getBytes().length <= 231) {
-			byte[] payload = new byte[23 + 2 + searchTxt.getBytes().length + 1];
 			Header queryH = new Header();
-			queryH.setHeader(payload);
 			queryH.initializeHeader();
+			queryH.setMsgId();
+			queryH.setMsgType("query");
+			byte[] queryHeader = queryH.getHeader();
 			//TODO set the length of the payload more elegantly :)
-			payload[19] = (byte)0x00;
-			payload[20] = (byte)0x00;
-			payload[21] = (byte)0x00;
-			payload[22] = (byte)(searchTxt.getBytes().length + 1);
+			queryHeader[19] = (byte)0x00;
+			queryHeader[20] = (byte)0x00;
+			queryHeader[21] = (byte)0x00;
+			queryHeader[22] = (byte)(searchTxt.getBytes().length + 1); // +1 for \0
 			
 			// minimum speed, set to 0 for simpella
-			payload[23]=0;
-			payload[24]=0;
-			//TODO use ByteArrayOutputStream			
-			// ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
-			System.arraycopy((searchTxt + '\0').getBytes(), 0, payload, 25, searchTxt.getBytes().length + 1);
-			queryH.setMsgType("query");
-			queryH.setMsgId();
-			//TODO set and validate message and payload
-			//String s1 = new String(queryH.getHeader());
-			System.out.println("Pinged with query = " + Arrays.toString(payload));
-			String guid = SimpellaRoutingTables.guidToString(queryH.getHeader());
+			byte[] querySpeed = new byte[2];
+			querySpeed[0] = 0; //minimum speed, just set it to 0
+			querySpeed[1] = 0;
+
+			ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
+			payLoad.write(querySpeed);
+			payLoad.write((searchTxt + '\0').getBytes()); //make it a null terminated string
+			
+			String guid = SimpellaRoutingTables.guidToString(queryHeader);
 			SimpellaRoutingTables.generatedQueryList.add(guid);
-			SimpellaNetServer.broadcastQuery(payload, null);
-			//TODO file search
-			//System.out.println("Initial query : " + n);
+			SimpellaNetServer.broadcastQuery(queryHeader, payLoad.toByteArray(), null);
+			
 		} else{
 			System.out.println("Searchtext out of bound");
 		}	
