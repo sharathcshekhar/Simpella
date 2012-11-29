@@ -502,7 +502,7 @@ public class SimpellaNetServer {
 		queryHitHeader.setMsgId(queryHeader);
 		queryHitHeader.setMsgType("queryhit");
 		SimpellaFileShareDB db = new SimpellaFileShareDB();
-		db.setSharedDirectory("/home/sharath/simpella_share");
+	//	db.setSharedDirectory("/home/sharath/simpella_share");
 		System.out.println("In replyWithQuery, searchString " + searchString);
 		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
 		Iterator<Object> itr1 = searchResults.iterator();
@@ -582,18 +582,20 @@ public class SimpellaNetServer {
 			DataOutputStream outToClient = new DataOutputStream(
 					sessionSocket.getOutputStream());
 			//outToClient.write(header, 23, offset);
-			byte[] queryHeaderBytes = queryHitHeader.getHeader();
+			byte[] queryHitHeaderBytes = queryHitHeader.getHeader();
 			
+			//TODO better way to set length
 			byte[] payLoadLength = SimpellaUtils.toBytes(offset);
-			queryHeaderBytes[19] = payLoadLength[0]; 
-			queryHeaderBytes[20] = payLoadLength[1];
-			queryHeaderBytes[21] = payLoadLength[2];
-			queryHeaderBytes[22] = payLoadLength[3];
+			queryHitHeaderBytes[19] = payLoadLength[0]; 
+			queryHitHeaderBytes[20] = payLoadLength[1];
+			queryHitHeaderBytes[21] = payLoadLength[2];
+			queryHitHeaderBytes[22] = payLoadLength[3];
+			
 			for(int k = 0; k < payLoadArray.length; k ++) {
-				System.out.println("Query: payLoadArray[" + k + "] = " + payLoadArray[k]);
+				System.out.println("QueryHit: payLoadArray[" + k + "] = " + payLoadArray[k]);
 			}
 			//write header
-			outToClient.write(queryHeaderBytes, 0, 23);
+			outToClient.write(queryHitHeaderBytes, 0, 23);
 			//write payload
 			outToClient.write(payLoadArray, 0, offset);
 		}

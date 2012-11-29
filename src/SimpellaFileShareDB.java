@@ -10,7 +10,7 @@ import java.util.ArrayList;
  *
  */
 public class SimpellaFileShareDB {
-	String sharedDirectory = "/home/sharath/Downloads";
+	static String sharedDirectory = "/home/sharath/Downloads";
 	int noOfFiles = 0;
 	long sizeOfFiles = 0;
 	
@@ -26,10 +26,10 @@ public class SimpellaFileShareDB {
 		return sizeOfFiles;
 	}
 	
-	public void setSharedDirectory(String dir)
+	public static void setSharedDirectory(String dir)
 	{
 		//TODO if relative path, use pwd:dir
-		this.sharedDirectory = dir;
+		sharedDirectory = dir;
 	}
 	
 	public void scanSharedDirectory() {

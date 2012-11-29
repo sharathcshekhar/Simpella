@@ -66,14 +66,18 @@ public class Simpella {
 				cmd.connect();
 
 			} else if(cmd_args[0].equals("find")){
-				cmd.initializeQuery(cmd_args[1]);
 				System.out.println("find command");
+				cmd.initializeQuery(cmd_args[1]);
 			} else if (cmd_args[0].equals("update")) {
-				System.out.println("open command");
+				System.out.println("update command");
 				//TODO broadcast ping
+			} else if (cmd_args[0].equals("share")) {
+				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
+				System.out.println("sharing directory " + sharedDirectory);
+				SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
 			} else if (cmd_args[0].equals("quit")) {
 				System.out.println("quit command");
-				//TODO broadcast ping
+				//TODO quit
 			} else {
 				//TODO implement quit/bye
 				//TODO implement other commands
