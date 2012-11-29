@@ -94,7 +94,9 @@ public class SimpellaCommands {
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
 				len = inFromServer.read(msg, 0, 23);
-				System.out.println("msg received from server");
+				System.out.println("msg received from server " + 
+						sessionSocket.getInetAddress().getHostAddress() + " At port " + 
+						sessionSocket.getPort());
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;
@@ -138,7 +140,7 @@ public class SimpellaCommands {
 			queryHeader[19] = (byte)0x00;
 			queryHeader[20] = (byte)0x00;
 			queryHeader[21] = (byte)0x00;
-			queryHeader[22] = (byte)(searchTxt.getBytes().length + 1); // +1 for \0
+			queryHeader[22] = (byte)(2 + searchTxt.getBytes().length + 1); // +2 for speed +1 for \0
 			
 			// minimum speed, set to 0 for simpella
 			byte[] querySpeed = new byte[2];
@@ -148,7 +150,7 @@ public class SimpellaCommands {
 			ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
 			payLoad.write(querySpeed);
 			payLoad.write((searchTxt + '\0').getBytes()); //make it a null terminated string
-			
+			System.out.println("In initialize query. Writing a payLoad of " + payLoad.size());
 			String guid = SimpellaRoutingTables.guidToString(queryHeader);
 			SimpellaRoutingTables.generatedQueryList.add(guid);
 			SimpellaNetServer.broadcastQuery(queryHeader, payLoad.toByteArray(), null);

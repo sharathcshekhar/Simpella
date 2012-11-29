@@ -241,11 +241,12 @@ public class SimpellaNetServer {
 			Socket sender) throws Exception {
 		Socket clientSocket = null;
 		String clientIP = "";
-		
+	//	System.out.println("header ength = ");
 		for (int i = 0; i < 3; i++) {
+			System.out.println("In broadcast incoming " + i);
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
 			clientIP = SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
-			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[i].remotePort;
+			int clientPort = SimpellaConnectionStatus.incomingConnectionList[i].remotePort;
 			
 			if (!clientIP.equals("")) {
 				if ((sender == null)
@@ -272,7 +273,7 @@ public class SimpellaNetServer {
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
 
-					System.out.println("broadcast incoming " + clientIP
+					System.out.println("broadcast outgoing " + clientIP
 							+ " port = " + clientPort);
 					/* send to everyone apart from this node
 					 * If sender is null, send it to all 
@@ -365,6 +366,7 @@ public class SimpellaNetServer {
 				int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
 				if(payLoadLen > 256) {
 					//report error
+					System.out.println("payload > 256 bytes!");
 					return;
 				}
 				byte[] queryPayLoad = new byte[payLoadLen];
@@ -377,15 +379,22 @@ public class SimpellaNetServer {
 				len = msg.read(rawQueryString , 0, payLoadLen - 2);
 				if (rawQueryString[len - 1] != (byte)0x00) {
 					System.out.println("Not null terminatd String, error!");
+					return;
 				}
 				String searchString = new String(rawQueryString);
 				System.out.println("Search String is " + searchString);
-				
-				replyWithQueryHit(sessionSocket, searchString);
+				/*
+				 * Crude way of setting GUID
+				 * TODO make it more elegant
+				 */
+			//	byte[] messageID = byte[16]
+				System.out.println("message type " + header[16]);
+				replyWithQueryHit(sessionSocket, searchString, header);
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				if(header[17] > 1) {
 					header[17]--; //decrement TTL
 					header[18]++; //Increment hops
+					System.out.println("broadcasting query with message type " + header[16]);
 					broadcastQuery(header, queryPayLoad, sessionSocket);
 				}
 			}
@@ -420,7 +429,7 @@ public class SimpellaNetServer {
 			
 			int k;
 			for(k = 0; k < len; k++) {
-				System.out.println("Received Query payLoad[" + k + "] = " + queryHitPayLoad[k]);
+				System.out.println("Received QueryHit payLoad[" + k + "] = " + queryHitPayLoad[k]);
 			}
 			// 11 bytes would be header, 16 bytes trailer. Middle (payLoadLen - 10 - 16)
 			// should be file info
@@ -451,13 +460,15 @@ public class SimpellaNetServer {
 			
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if(SimpellaRoutingTables.generatedQueryList.contains(guid)) {
+				System.out.println("Recived Query-hit for me! :)");
 				//TODO initiate file download if the hit is for self
 			} else if (SimpellaRoutingTables.QueryTable.containsKey(guid)) {
 				// if not route to the appropriate node
 				Socket queryHitFwdSocket = SimpellaRoutingTables.QueryTable
 						.get(guid);
 				System.out.println("Query-hit received for ip "
-						+ queryHitFwdSocket.getInetAddress().getHostAddress());
+						+ queryHitFwdSocket.getInetAddress().getHostAddress() 
+						+ ":" + queryHitFwdSocket.getPort());
 				header[17]--; // decrement TTL
 				header[18]++; // Increment hops
 				DataOutputStream queryHitToClient = null;
@@ -470,6 +481,8 @@ public class SimpellaNetServer {
 					System.out
 							.println("Socket Connection Error during pong write");
 				}
+			} else {
+				System.out.println("Stale query-hit, ignoring");
 			}
 			
 		}
@@ -482,14 +495,16 @@ public class SimpellaNetServer {
 		this.port = port;
 	}
 	
-	public static void replyWithQueryHit(Socket sessionSocket, String searchString) throws IOException {
-		Header queryHeader = new Header();
-		queryHeader.initializeHeader();
-		queryHeader.setMsgType("queryhit");
+	public static void replyWithQueryHit(Socket sessionSocket, String searchString, byte[] queryHeader) throws IOException {
+		Header queryHitHeader = new Header();
+		queryHitHeader.initializeHeader();
+		//retain the msgID in query header in the query-hit header
+		queryHitHeader.setMsgId(queryHeader);
+		queryHitHeader.setMsgType("queryhit");
 		//SimpellaFileShareDB db = new SimpellaFileShareDB();
 		//ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
 		/* For testing: */
-		
+		System.out.println("replying with a query-hit");
 		ArrayList<Object> searchResults = new ArrayList<Object>();
 		searchResults.add(12345);
 		searchResults.add(100);
@@ -553,16 +568,16 @@ public class SimpellaNetServer {
 			DataOutputStream outToClient = new DataOutputStream(
 					sessionSocket.getOutputStream());
 			//outToClient.write(header, 23, offset);
-			byte[] queryHeader1 = queryHeader.getHeader();
-			queryHeader1[19] = (byte) 0x00; 
-			queryHeader1[20] = (byte) 0x00;
-			queryHeader1[21] = (byte) 0x00;
-			queryHeader1[22] = (byte) 51;
+			byte[] queryHeaderBytes = queryHitHeader.getHeader();
+			queryHeaderBytes[19] = (byte) 0x00; 
+			queryHeaderBytes[20] = (byte) 0x00;
+			queryHeaderBytes[21] = (byte) 0x00;
+			queryHeaderBytes[22] = (byte) 51;
 			for(int k = 0; k < payLoadArray.length; k ++) {
 				System.out.println("Query: payLoadArray[" + k + "] = " + payLoadArray[k]);
 			}
 			//write header
-			outToClient.write(queryHeader1, 0, 23);
+			outToClient.write(queryHeaderBytes, 0, 23);
 			//write payload
 			outToClient.write(payLoadArray, 0, offset);
 		}

@@ -20,6 +20,16 @@ public class Header {
 		this.header = header;
 	}
 	
+	public void setMsgId(byte[] headerToSet) {
+		if (headerToSet.length < 16) {
+			System.out.println("Header too small to set guid");
+			return;
+		}
+		for(int i = 0; i < 16; i++) {
+			this.header[i] = headerToSet[i];
+		}
+	}
+	
 	public void setMsgType(String msgType) {
 		this.msgType = msgType;
 		if(msgType.equalsIgnoreCase("pong")){
@@ -114,9 +124,9 @@ public class Header {
 		}
 	}
 	
-	public void setPongPayload(Socket clientSocket,byte[] payload,byte[] files, byte[] kBs){
+	public void setPongPayload(Socket clientSocket, byte[] payload, byte[] files, byte[] kBs){
 		ByteBuffer b = ByteBuffer.allocate(4);
-		b.order(ByteOrder.BIG_ENDIAN); 
+		b.order(ByteOrder.BIG_ENDIAN);
 		b.putInt(clientSocket.getLocalPort());
 		byte[] payload_port = new byte[2]; 
 		//TODO Endianness validation
