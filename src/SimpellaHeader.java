@@ -5,21 +5,46 @@ import java.util.Hashtable;
 
 
 
+
 public class SimpellaHeader {
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Header.
+ */
+	/** The header. */
 	byte[] header;
+	
+	/** The msg type. */
 	String msgType;
+	
+	/**
+	 * Gets the msg type.
+	 *
+	 * @return the msg type
+	 */
 	public String getMsgType() {
 		return msgType;
 	}
 
+	/**
+	 * Gets the header.
+	 *
+	 * @return the header
+	 */
 	public byte[] getHeader() {
 		return header;
 	}
 
+	/**
+	 * Sets the header.
+	 *
+	 * @param header the new header
+	 */
 	public void setHeader(byte[] header) {
 		this.header = header;
 	}
 	
+
 	public void setMsgId(byte[] headerToSet) {
 		if (headerToSet.length < 16) {
 			System.out.println("Header too small to set guid");
@@ -30,6 +55,12 @@ public class SimpellaHeader {
 		}
 	}
 	
+
+	/**
+	 * Sets the msg type.
+	 *
+	 * @param msgType the new msg type
+	 */
 	public void setMsgType(String msgType) {
 		this.msgType = msgType;
 		if(msgType.equalsIgnoreCase("pong")){
@@ -46,32 +77,66 @@ public class SimpellaHeader {
 		}
 	}
 
+
 	public SimpellaHeader(){
+	/**
+	 * Instantiates a new header.
+	 */
 		header = new byte[23];
 	}
 	
+	/**
+	 * Sets the ttl.
+	 *
+	 * @param ttl the new ttl
+	 */
 	public void setTTL(int ttl){
 		header[17]=(byte) ttl;
 	}
 	
+	/**
+	 * Gets the ttl.
+	 *
+	 * @return the ttl
+	 */
 	public byte getTTL(){
 		return header[17];
 	}
 	
+	/**
+	 * Sets the hop.
+	 *
+	 * @param hop the new hop
+	 */
 	public void setHop(int hop){
 		header[18]=(byte)hop;
 	}
 	
+	/**
+	 * Gets the hop.
+	 *
+	 * @return the hop
+	 */
 	public byte getHop(){
 		return header[18];
 	}
 	
 	
+	/**
+	 * Sets the pay load length.
+	 *
+	 * @param plen the new pay load length
+	 */
 	public void setPayLoadLength(byte[] plen){
-		header[19] = plen[0];
-		header[20] = plen[1];
+		header[22] = plen[0];
+		header[21] = plen[1];
+		header[20] = plen[2];
+		header[19] = plen[3];
 	}
 	
+	/**
+	 * Initialize header.
+	 */
 	public void initializeHeader(){
 		int i;
 		for(i=0;i<8;i++){
@@ -96,7 +161,7 @@ public class SimpellaHeader {
 	/**
 	 * Sets the msg id.
 	 *
-	 * @param header the new msg id
+	 * @param id the id
 	 */
 	public void copyMsgId(byte[] id){
 		for(int i=0;i<8;i++){
@@ -110,7 +175,6 @@ public class SimpellaHeader {
 	/**
 	 * Sets the msg id.
 	 *
-	 * @param header the new msg id
 	 */
 	public void setMsgId(){
 		byte[] bytes = new byte[8];
@@ -124,36 +188,86 @@ public class SimpellaHeader {
 		}
 	}
 	
-	public void setPongPayload(Socket clientSocket, byte[] payload, byte[] files, byte[] kBs){
+
+	/**
+	 * Sets the numof files shared.
+	 *
+	 * @param numF the new numof files shared
+	 */
+	public void setNumofFilesShared(int numF){
+		byte[] numFiles = new byte[4];
+		numFiles = SimpellaUtils.toBytes(numF);
+		header[32]=numFiles[0];
+		header[31]=numFiles[1];
+		header[30]=numFiles[2];
+		header[29]=numFiles[3];
+	}
+	
+	/**
+	 * Gets the numof files shared.
+	 *
+	 * @return the numof files shared
+	 */
+	public int getNumofFilesShared(){
+		byte[] files = new byte[4];
+		files[0]=header[32];
+		files[1]=header[31];
+		files[2]=header[30];
+		files[3]=header[29];
+		int result = SimpellaUtils.byteArrayToInt(files);
+		return result;
+	}
+	
+	public void setKbsShared(int kbF){
+		byte[] numFiles = new byte[4];
+		numFiles = SimpellaUtils.toBytes(kbF);
+		header[36]=numFiles[0];
+		header[35]=numFiles[1];
+		header[34]=numFiles[2];
+		header[33]=numFiles[3];
+	}
+	
+	public int getKbsShared(){
+		byte[] files = new byte[4];
+		files[0]=header[36];
+		files[1]=header[35];
+		files[2]=header[34];
+		files[3]=header[33];
+		int result = SimpellaUtils.byteArrayToInt(files);
+		return result;
+	}
+	
+	/**
+	 * Sets the pong payload.
+	 *
+	 * @param clientSocket the client socket
+	 * @param payload the payload
+	 */
+	public void setPongPayload(Socket clientSocket,byte[] payload){
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.order(ByteOrder.BIG_ENDIAN);
 		b.putInt(clientSocket.getLocalPort());
-		byte[] payload_port = new byte[2]; 
+		byte[] payload_port = new byte[4]; 
 		//TODO Endianness validation
 		payload_port = b.array();
-		payload[23] = payload_port[2];
 		payload[24] = payload_port[3];
+		payload[23] = payload_port[2];
 		
 		byte[] ipAddr = new byte[4]; 
 		ipAddr = clientSocket.getInetAddress().getAddress();
-		payload[28] = ipAddr[0];
-		payload[27] = ipAddr[1];
-		payload[26] = ipAddr[2];
-		payload[25] = ipAddr[3];
-		
-		/*//Number of files shared - 4 bytes
-		payload[29] = files[0];
-		payload[30] = files[1];
-		payload[31] = files[2];
-		payload[32] = files[3];*/
-		
-		/*//Number of kilobytes shared - 4bytes
-		payload[33] = kBs[0];
-		payload[34] = kBs[1];
-		payload[35] = kBs[2];
-		payload[36] = kBs[3];*/
+		payload[28] = ipAddr[3];
+		payload[27] = ipAddr[2];
+		payload[26] = ipAddr[1];
+		payload[25] = ipAddr[0];
 	}
 	
+	/**
+	 * Sets the query payload.
+	 *
+	 * @param payload the payload
+	 * @param speed the speed
+	 * @param search the search
+	 */
 	public void setQueryPayload(byte[] payload, byte[] speed, String search){
 		//TODO size and payload validation
 		payload[24]=speed[0];
@@ -175,5 +289,6 @@ public class SimpellaHeader {
 		 * payload[last 16 byte] = unique ID of the servent
 		 */
 	}
+	
 
 }

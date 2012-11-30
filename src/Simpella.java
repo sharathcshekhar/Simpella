@@ -20,6 +20,7 @@ public class Simpella {
 	public static void main(String[] args) throws Exception {
 
 		SimpellaNetServer NetSrv = new SimpellaNetServer();
+		//SimpellaFileServer sf = new SimpellaFileServer(); TODO
 		int port = 6346;
 		if(args.length == 1) {
 			port = Integer.parseInt(args[0]);
@@ -33,7 +34,7 @@ public class Simpella {
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
-				
+
 		/*
 		 * TODO change in architecture:
 		 * Have a queue of size 3 objects of type SimpellaCommands

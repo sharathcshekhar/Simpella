@@ -230,10 +230,10 @@ public class SimpellaHandleMsg {
 		h2.setHeader(payload);
 		h2.setMsgType("pong");
 		// TODO files and size
-		byte[] filesShared = null;
-		byte[] kbsShared = null;
+	//	byte[] filesShared = null;
+	//	byte[] kbsShared = null;
 		// No need to set MsgId as it should be same as ping
-		h2.setPongPayload(clientSocket, payload, filesShared, kbsShared);
+		h2.setPongPayload(clientSocket, payload);
 
 		DataOutputStream outToClient = null;
 		try {

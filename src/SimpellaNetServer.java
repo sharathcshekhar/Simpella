@@ -162,9 +162,10 @@ public class SimpellaNetServer {
 			}
 			SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
 			msgHandler.handleMsg(header, clientSocket);
+
 		}
 	}
-
+	
 	public int getPort() {
 		return port;
 	}
@@ -172,5 +173,4 @@ public class SimpellaNetServer {
 	public void setPort(int port) {
 		this.port = port;
 	}
-
 }

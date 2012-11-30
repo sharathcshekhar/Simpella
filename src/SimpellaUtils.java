@@ -11,6 +11,7 @@ public class SimpellaUtils {
 		SimpellaUtils.r = r;
 	}
 	
+
 	
   	/* Byte array to int.
     *

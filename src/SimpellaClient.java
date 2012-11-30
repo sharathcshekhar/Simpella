@@ -36,6 +36,7 @@ public class SimpellaClient {
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(connect_cmd.getBytes());
+
 		DataInputStream inFromServer = new DataInputStream(clientSocket.getInputStream());
 		
 		byte[] replyToConnect = new byte[25];
@@ -90,6 +91,7 @@ public class SimpellaClient {
 				System.out.println("msg received from server " + 
 						sessionSocket.getInetAddress().getHostAddress() + " At port " + 
 						sessionSocket.getPort());
+
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;
