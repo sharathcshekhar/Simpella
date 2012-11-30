@@ -13,11 +13,13 @@ public class SimpellaUtils {
 	
 
 	
-  	/* Byte array to int.
-    *
-    * @param b the b
-    * @return the int
-    */
+	/**
+	 * Byte array to int.
+     * Byte array should be in Big Endian 
+     * 
+     * @param b the byte
+     * @return the int
+     */
    public static int byteArrayToInt(byte[] b)
    {
        return  b[3] & 0xFF |
@@ -27,7 +29,7 @@ public class SimpellaUtils {
    }
    
    /**
-    * To bytes.
+    * To bytes in Big Endian format.
     *
     * @param i the i
     * @return the byte[]

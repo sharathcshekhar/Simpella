@@ -15,6 +15,9 @@ public class SimpellaHandleMsg {
 
 		DataInputStream inFromClient = new DataInputStream(
 				sessionSocket.getInputStream());
+		/*
+		 * Handle PING Message
+		 */
 		if (header[16] == (byte) 0x00) {
 			System.out.println("Ping received");
 			String key = SimpellaRoutingTables.guidToString(header);
@@ -33,8 +36,12 @@ public class SimpellaHandleMsg {
 					sendPong(sessionSocket, header);
 				}
 			}
-			// TODO else if header[16] == 0x01, forward
-		} else if (header[16] == (byte) 0x01) {
+		} 
+		
+		/*
+		 * Handle PONG message
+		 */
+		else if (header[16] == (byte) 0x01) {
 			System.out.println("Pong received");
 			String guid = SimpellaRoutingTables.guidToString(header);
 			// Read the pong payload
@@ -53,6 +60,7 @@ public class SimpellaHandleMsg {
 						+ " 4: " + pongPayLoad[4] + " 5: " + pongPayLoad[5]);
 				return;
 				// TODO read contents and store them in a store
+				// Initiate connections depending on the results
 			} else {
 				// forward the pong using the routing table
 				if (SimpellaRoutingTables.PingTable.containsKey(guid)) {
@@ -74,17 +82,18 @@ public class SimpellaHandleMsg {
 					}
 				}
 			}
-		} else if (header[16] == (byte) 0x80) {
+		} 
+		
+		/*
+		 * Handle QUERY message 
+		 */
+		else if (header[16] == (byte) 0x80) {
 			// TODO handle message
 			System.out.println("Query-message");
 			String queryid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.QueryTable.containsKey(queryid)) {
-				// TODO combine if and else to one if ignore Ping if the node
-				// has seen the request!
+				System.out.println("Query message seen before, ignoring");
 			} else {
-				// TODO see if you have an answer to the queried string
-				// if header[19-22] > 256, drop the packet!
-				// if not read those many number of bytes.
 				byte[] tmp = new byte[4];
 				tmp[0] = header[19];
 				tmp[1] = header[20];
@@ -112,9 +121,9 @@ public class SimpellaHandleMsg {
 				String searchString = new String(rawQueryString);
 				System.out.println("Search String is " + searchString);
 				/*
-				 * Crude way of setting GUID TODO make it more elegant
+				 * Crude way of setting GUID 
+				 * TODO make it more elegant
 				 */
-				// byte[] messageID = byte[16]
 				System.out.println("message type " + header[16]);
 				replyWithQueryHit(sessionSocket, searchString, header);
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
@@ -126,7 +135,12 @@ public class SimpellaHandleMsg {
 					broadcastQuery(header, queryPayLoad, sessionSocket);
 				}
 			}
-		} else if (header[16] == (byte) 0x81) {
+		} 
+		
+		/*
+		 * Handle QUERY-HIT 
+		 */
+		else if (header[16] == (byte) 0x81) {
 			// TODO handle message
 			byte[] qHit_tmp_buffer = new byte[4];
 			qHit_tmp_buffer[0] = header[19];
@@ -193,7 +207,7 @@ public class SimpellaHandleMsg {
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
 				System.out.println("Recived Query-hit for me! :)");
-				// TODO initiate file download if the hit is for self
+				//TODO push the results to a list
 			} else if (SimpellaRoutingTables.QueryTable.containsKey(guid)) {
 				// if not route to the appropriate node
 				Socket queryHitFwdSocket = SimpellaRoutingTables.QueryTable
@@ -223,28 +237,30 @@ public class SimpellaHandleMsg {
 	public void sendPong(Socket clientSocket, byte[] header) {
 		// Reply with a pong on ping
 		System.out.println("Sending pong");
-		byte[] payload = new byte[37];
-		System.arraycopy(header, 0, payload, 0, 22);
-		SimpellaHeader h2 = new SimpellaHeader();
-		h2.initializeHeader();
-		h2.setHeader(payload);
-		h2.setMsgType("pong");
+		byte[] pongPacket = new byte[37];
+		// copy 23 bytes from header, starting at 0,
+		// to pongPacket, from position 0
+		System.arraycopy(header, 0, pongPacket, 0, 23);
+		SimpellaHeader pongHeader = new SimpellaHeader();
+		pongHeader.initializeHeader();
+		pongHeader.setHeader(pongPacket);
+		pongHeader.setMsgType("pong");
 		// TODO files and size
 	//	byte[] filesShared = null;
 	//	byte[] kbsShared = null;
 		// No need to set MsgId as it should be same as ping
-		h2.setPongPayload(clientSocket, payload);
+		pongHeader.setPongPayload(clientSocket, pongPacket);
 
 		DataOutputStream outToClient = null;
 		try {
 			outToClient = new DataOutputStream(clientSocket.getOutputStream());
-			outToClient.write(payload);
+			outToClient.write(pongPacket);
 		} catch (IOException e) {
 			System.out.println("Socket Connection Error during pong write");
 		}
 
 		System.out.println("Server replies with pong : "
-				+ Arrays.toString(payload));
+				+ Arrays.toString(pongPacket));
 	}
 
 	public void broadcastPing(byte[] pingMsg, Socket sender)

@@ -14,15 +14,6 @@ import java.net.SocketException;
  * 
  */
 public class SimpellaNetServer {
-	/*
-	 * TODO change in architecture: Have a queue of size 3 objects of type
-	 * SimpellaServerResponse Every time a connection is received, a new object
-	 * is created and store in this queue, if the size is not already greater
-	 * than 3 Before closing the socket connection, remove the item from the
-	 * queue. All future communication with this object shall be made through
-	 * calling private variables.
-	 */
-
 	int port;
 	boolean status;
 

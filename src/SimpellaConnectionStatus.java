@@ -1,6 +1,8 @@
 import java.net.Socket;
 
 public class SimpellaConnectionStatus {
+	public static int simpellaNetPort = 0;
+	public static int simpellaFileDownloadPort = 0;
 	public static int incomingConnectionCount = 0;
 	public static int outgoingConnectionCount = 0;
 	public static IncomingConnectionTable[] incomingConnectionList = 
@@ -17,6 +19,8 @@ public class SimpellaConnectionStatus {
 		}
 		incomingConnectionCount = 0;
 		outgoingConnectionCount = 0;
+		simpellaNetPort = 6346; //default port
+		simpellaFileDownloadPort = 5635; //default port
 	}
 
 	// TODO check for only IP. Checking both IP and port # for testing purpose

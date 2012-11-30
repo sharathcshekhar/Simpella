@@ -127,11 +127,13 @@ public class SimpellaHeader {
 	 *
 	 * @param plen the new pay load length
 	 */
-	public void setPayLoadLength(byte[] plen){
-		header[22] = plen[0];
-		header[21] = plen[1];
-		header[20] = plen[2];
-		header[19] = plen[3];
+	public void setPayLoadLength(int plen){
+		byte[] plenb = new byte[4];
+		SimpellaUtils.toBytes(plen);
+		header[22] = plenb[0];
+		header[21] = plenb[1];
+		header[20] = plenb[2];
+		header[19] = plenb[3];
 	}
 	
 	/**

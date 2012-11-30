@@ -19,31 +19,36 @@ public class Simpella {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		SimpellaNetServer NetSrv = new SimpellaNetServer();
-		//SimpellaFileServer sf = new SimpellaFileServer(); TODO
-		int port = 6346;
-		if(args.length == 1) {
-			port = Integer.parseInt(args[0]);
-		}
+		SimpellaNetServer netSrv = new SimpellaNetServer();
+		SimpellaFileServer fileSrv = new SimpellaFileServer();
+		
 		SimpellaConnectionStatus.ConnectionStatusInit();
+		int netPort = SimpellaConnectionStatus.simpellaNetPort;
+		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
+		
+		if(args.length == 1) {
+			netPort = Integer.parseInt(args[0]);
+			SimpellaConnectionStatus.simpellaNetPort = netPort;
+		} else 	if(args.length == 2) {
+			netPort = Integer.parseInt(args[0]);
+			SimpellaConnectionStatus.simpellaNetPort = netPort;
+
+			fileDwPort = Integer.parseInt(args[1]);
+			SimpellaConnectionStatus.simpellaFileDownloadPort = fileDwPort;
+		}
+		
 		//TODO take second argument to be file server
-		NetSrv.setPort(port);
-		NetSrv.start();
+		netSrv.setPort(netPort);
+		netSrv.start();
+		fileSrv.setPort(fileDwPort);
+		fileSrv.start();
+		
 		SimpellaClient client = new SimpellaClient();
 
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
 
-		/*
-		 * TODO change in architecture:
-		 * Have a queue of size 3 objects of type SimpellaCommands
-		 * Every time a connect command is called, a new object is created
-		 * and store in this queue, if the size is not already greater than 3
-		 * Before closing the socket connection, remove the item from the
-		 * queue. All future communication with this object shall be made
-		 * through calling private variables.
-		 */
 		while (true) {
 			System.out.print("Simpella> ");
 			String usrInput = null;
@@ -85,7 +90,14 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
-				//TODO quit
+				// test code
+				SimpellaFileClient fileDw = new SimpellaFileClient();
+				fileDw.setFileIndex(1);
+				fileDw.setFileName("test.mp3");
+				fileDw.setServerIP("localhost");
+				fileDw.setServerPort(8080);
+				fileDw.downloadFile();
+				//TODO implement download
 				
 			} else if (cmd_args[0].equals("share")) {
 				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
