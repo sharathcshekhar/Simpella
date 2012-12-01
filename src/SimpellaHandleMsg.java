@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Vector;
 
 public class SimpellaHandleMsg {
 
@@ -211,35 +212,45 @@ public class SimpellaHandleMsg {
 			// 11 bytes would be header, 16 bytes trailer. Middle (payLoadLen -
 			// 10 - 16)
 			// should be file info
-			int bytes_read = 0;
-			while (bytes_read < (payLoadLen - 11 - 16)) {
-				msg.read(qHit_tmp_buffer);
-				int file_index = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-				bytes_read += 4;
-
-				msg.read(qHit_tmp_buffer);
-				int file_size = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-				bytes_read += 4;
-
-				byte[] songname = new byte[512]; // limit the songname to 512
-				int i = 0;
-				do {
-					songname[i] = (byte) msg.read();
-					i++;
-					bytes_read++;
-				} while ((songname[i - 1] != 0)
-						&& (bytes_read < (payLoadLen - 11 - 16)));
-				String song_str = new String(songname, 0, i);
-				System.out.println("file index = " + file_index + " size = "
-						+ file_size + " name = " + song_str);
-			}
-			byte[] serventID = new byte[16];
-			msg.read(serventID);
-
+						
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
 				System.out.println("Recived Query-hit for me! :)");
 				//TODO push the results to a list
+				int bytes_read = 0;
+				while (bytes_read < (payLoadLen - 11 - 16)) {
+					SimpellaQueryResults queryHitRes = new SimpellaQueryResults();
+					queryHitRes.setIpAddress(InetAddress.getByAddress(ip_address).getHostAddress());
+					queryHitRes.setPort(port_no);
+					msg.read(qHit_tmp_buffer);
+					int file_index = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
+					bytes_read += 4;
+					queryHitRes.setFile_index(file_index);
+
+					msg.read(qHit_tmp_buffer);
+					int file_size = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
+					bytes_read += 4;
+					queryHitRes.setFile_size(file_size);
+
+					byte[] songname = new byte[512]; // limit the songname to 512
+					int i = 0;
+					do {
+						songname[i] = (byte) msg.read();
+						i++;
+						bytes_read++;
+					} while ((songname[i - 1] != 0)
+							&& (bytes_read < (payLoadLen - 11 - 16)));
+					
+					String song_str = new String(songname, 0, i);
+					System.out.println("file index = " + file_index + " size = "
+							+ file_size + " name = " + song_str);
+					queryHitRes.setFileName(song_str);
+					SimpellaConnectionStatus.insertToQueryResultsTable(queryHitRes);
+				}
+				
+				byte[] serventID = new byte[16];
+				msg.read(serventID);
+
 			} else if (SimpellaRoutingTables.QueryTable.containsKey(guid)) {
 				// if not route to the appropriate node
 				Socket queryHitFwdSocket = SimpellaRoutingTables.QueryTable

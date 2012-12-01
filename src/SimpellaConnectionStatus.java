@@ -1,4 +1,5 @@
 import java.net.Socket;
+import java.util.Vector;
 
 public class SimpellaConnectionStatus {
 	public static int simpellaNetPort = 0;
@@ -9,7 +10,22 @@ public class SimpellaConnectionStatus {
 			new IncomingConnectionTable[3];
 	public static OutgoingConnectionTable[] outgoingConnectionList = 
 			new OutgoingConnectionTable[3];
-
+	
+//	public static Hashtable<Integer, SimpellaQueryResults> queryResults = 
+//			new Hashtable<Integer, SimpellaQueryResults>();
+//	static int nextInsPosQueryRes = 0;
+	
+	public static Vector<SimpellaQueryResults> queryResults = new  Vector<SimpellaQueryResults>();
+	
+	public static void insertToQueryResultsTable(SimpellaQueryResults results) {
+		if(queryResults.size() < 50) {
+			queryResults.add(0, results);
+		} else {
+			queryResults.remove(50);
+			queryResults.add(0, results);
+		}
+	}
+	
 	public static void ConnectionStatusInit() {
 		for (int i = 0; i < 3; i++) {
 			incomingConnectionList[i] = new IncomingConnectionTable();
@@ -21,7 +37,7 @@ public class SimpellaConnectionStatus {
 		outgoingConnectionCount = 0;
 		simpellaNetPort = 6346; //default port
 		simpellaFileDownloadPort = 5635; //default port
-	}
+		}
 
 	// TODO check for only IP. Checking both IP and port # for testing purpose
 	// only

@@ -127,20 +127,22 @@ public class SimpellaFileServer {
 		String[] parsedStrings = requestString.split("/");
 		System.out.println("Parsed Strings:" + parsedStrings[0] + parsedStrings[1] 
 				+ parsedStrings[2] + parsedStrings[3]);
-		int fileIndex = Integer.parseInt(parsedStrings[2]);
-		String filename = parsedStrings[3];
+		//int fileIndex = Integer.parseInt(parsedStrings[2]);
+		//String filename = parsedStrings[3];
 		
-		SimpellaFileShareDB db = new SimpellaFileShareDB();
+	//	SimpellaFileShareDB db = new SimpellaFileShareDB();
 	//	String file_fullPath = db.getFullFilePath(filename, fileIndex);
 		// test code
 		String file_fullPath = "/home/sharath/simpella_share/share3/01 Yarighelhana.mp3";
 		String response = null;
+		/*
 		if(file_fullPath == null){
 			System.out.println("File not present");
 			response = "HTTP/1.1 503 File not found.\r\n\r\n";
 			clientSocket.getOutputStream().write(response.getBytes());
 			return;
 		}
+		*/
 		File fileStream = new File(file_fullPath);
 		
 		byte[] fileBuffer = new byte[4096]; //Write through a 4Kb buffer

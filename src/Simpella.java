@@ -82,6 +82,11 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("list")) {
 				System.out.println("list command");
+				for(int i = 0; i < SimpellaConnectionStatus.queryResults.size(); i++) {
+					SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
+					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
+						+ " \t Size:" + res.getFile_size() + " Bytes\nName: " + res.getFileName());
+				}
 				//TODO quit
 				
 			} else if (cmd_args[0].equals("clear")) {
