@@ -10,9 +10,9 @@ import java.util.ArrayList;
  *
  */
 public class SimpellaFileShareDB {
-	static String sharedDirectory = "/home/sharath/Downloads";
+	static String sharedDirectory = "/home/sharath/simpella_share/share1";
 	int noOfFiles = 0;
-	long sizeOfFiles = 0;
+	int sizeOfFiles = 0;
 	
 	public String getSharedDirectory() {
 		return sharedDirectory;
@@ -22,7 +22,7 @@ public class SimpellaFileShareDB {
 		return noOfFiles;
 	}
 
-	public long getSizeOfFiles() {
+	public int getSizeOfFiles() {
 		return sizeOfFiles;
 	}
 	
@@ -66,10 +66,10 @@ public class SimpellaFileShareDB {
 				//TODO maintain the below info in a table
 				//filename:path:size:index:custom-info
 				System.out.println("File scanned = " + filename.getName() + 
-						"size = " + filename.length() + 
-						"full path = " + filename.getAbsolutePath());
+						" size = " + filename.length() + 
+						" full path = " + filename.getAbsolutePath());
 				noOfFiles ++;
-				sizeOfFiles = sizeOfFiles + filename.length();
+				sizeOfFiles = sizeOfFiles + (int)filename.length();
 			}
 		}
 	}

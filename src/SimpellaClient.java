@@ -84,10 +84,10 @@ public class SimpellaClient {
 		}
 		while (true) {
 			try {
-			byte[] msg = new byte[24];
+			byte[] header = new byte[23];
 				DataInputStream inFromServer = new DataInputStream(
 						sessionSocket.getInputStream());
-				len = inFromServer.read(msg, 0, 23);
+				len = inFromServer.read(header, 0, 23);
 				System.out.println("msg received from server " + 
 						sessionSocket.getInetAddress().getHostAddress() + " At port " + 
 						sessionSocket.getPort());
@@ -96,7 +96,7 @@ public class SimpellaClient {
 					System.out.println("Client has close the socket, exit");
 					break;
 				}
-				msgHandler.handleMsg(msg, sessionSocket);
+				msgHandler.handleMsg(header, sessionSocket);
 			} catch (SocketException E) {
 				System.out.println("Server closed the connection");
 				return;

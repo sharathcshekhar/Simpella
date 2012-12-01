@@ -114,7 +114,7 @@ public class Simpella {
 				SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 				fileDb.scanSharedDirectory();
 				System.out.println("No of files = " + fileDb.getNoOfFiles() 
-						+ " Total Size = " + fileDb.getSizeOfFiles());
+						+ " Total Size = " + fileDb.getSizeOfFiles() + " bytes");
 				
 			} else if (cmd_args[0].equals("monitor")) {
 				System.out.println("monitor command");
@@ -138,12 +138,17 @@ public class Simpella {
 			queryH.initializeHeader();
 			queryH.setMsgId();
 			queryH.setMsgType("query");
+			queryH.setPayLoadLength(2 + searchTxt.getBytes().length + 1); // +2 for speed +1 for \0
+						
 			byte[] queryHeader = queryH.getHeader();
+			
 			//TODO set the length of the payload more elegantly :)
+			/*
 			queryHeader[19] = (byte)0x00;
 			queryHeader[20] = (byte)0x00;
 			queryHeader[21] = (byte)0x00;
 			queryHeader[22] = (byte)(2 + searchTxt.getBytes().length + 1); // +2 for speed +1 for \0
+			*/
 			
 			// minimum speed, set to 0 for simpella
 			byte[] querySpeed = new byte[2];
@@ -166,5 +171,4 @@ public class Simpella {
 		
 		return;
 	}
-
 }
