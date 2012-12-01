@@ -12,8 +12,29 @@ public class SimpellaConnectionStatus {
 			new OutgoingConnectionTable[3];
 	
 //	public static Hashtable<Integer, SimpellaQueryResults> queryResults = 
-//			new Hashtable<Integer, SimpellaQueryResults>();
+//	new Hashtable<Integer, SimpellaQueryResults>();
 //	static int nextInsPosQueryRes = 0;
+
+	/*
+	 *  noOfQueryhitsRecived received per find command
+	 *  will be reset as soon as user presses enter in find command
+	 *  if 3 files are received in a single query hit command, the 
+	 *  count increases by 3
+	 */
+	
+	private static int queryhitsReceivedCount = 0;
+	
+	public static synchronized void addToQueryhitsReceivedCount(int no_of_files) {
+		queryhitsReceivedCount += no_of_files;
+	}
+	
+	public static synchronized void clearQueryhitsReceivedCount() {
+		queryhitsReceivedCount = 0;
+	}
+	
+	public static int getQueryhitsReceivedCount () {
+		return queryhitsReceivedCount;
+	}
 	
 	public static Vector<SimpellaQueryResults> queryResults = new  Vector<SimpellaQueryResults>();
 	
@@ -23,6 +44,12 @@ public class SimpellaConnectionStatus {
 		} else {
 			queryResults.remove(50);
 			queryResults.add(0, results);
+		}
+	}
+	
+	public static void clearQueryResultsTable() {
+		if(!queryResults.isEmpty()) {
+			queryResults.clear();
 		}
 	}
 	

@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Vector;
 
 public class SimpellaHandleMsg {
 
@@ -218,6 +217,11 @@ public class SimpellaHandleMsg {
 				System.out.println("Recived Query-hit for me! :)");
 				//TODO push the results to a list
 				int bytes_read = 0;
+				if(Simpella.is_FINDActive()) {
+					SimpellaConnectionStatus.addToQueryhitsReceivedCount(no_of_files);
+					System.out.println(SimpellaConnectionStatus.getQueryhitsReceivedCount() + 
+							" Responses received");
+				}
 				while (bytes_read < (payLoadLen - 11 - 16)) {
 					SimpellaQueryResults queryHitRes = new SimpellaQueryResults();
 					queryHitRes.setIpAddress(InetAddress.getByAddress(ip_address).getHostAddress());
@@ -242,10 +246,13 @@ public class SimpellaHandleMsg {
 							&& (bytes_read < (payLoadLen - 11 - 16)));
 					
 					String song_str = new String(songname, 0, i);
-					System.out.println("file index = " + file_index + " size = "
-							+ file_size + " name = " + song_str);
 					queryHitRes.setFileName(song_str);
 					SimpellaConnectionStatus.insertToQueryResultsTable(queryHitRes);
+					if(Simpella.debug) {
+						System.out.println("file index = " + file_index + " size = "
+								+ file_size + " name = " + song_str);
+					}
+					
 				}
 				
 				byte[] serventID = new byte[16];
@@ -299,11 +306,10 @@ public class SimpellaHandleMsg {
 		} catch (IOException e) {
 			System.out.println("Socket Connection Error during pong write");
 		}
-
-		System.out.println("Server replies with pong : "
+		if(Simpella.debug) {
+			System.out.println("Server replies with pong : "
 				+ Arrays.toString(pongPacket));
-		
-
+		}
 	}
 
 	public void broadcastPing(byte[] pingMsg, Socket sender)
@@ -364,9 +370,10 @@ public class SimpellaHandleMsg {
 		String clientIP = "";
 		
 		System.out.println("In broadcast query with packet Length = " + queryPayLoad.length);
-		
-		for(int j = 0; j < queryPayLoad.length; j++) {
-			System.out.println("broadcast: Query Payload["+j+"] = " + queryPayLoad[j]);
+		if(Simpella.debug) {
+			for(int j = 0; j < queryPayLoad.length; j++) {
+				System.out.println("broadcast: Query Payload["+j+"] = " + queryPayLoad[j]);
+			}
 		}
 		for (int i = 0; i < 3; i++) {
 			System.out.println("In broadcast incoming " + i);
@@ -458,10 +465,11 @@ public class SimpellaHandleMsg {
 			
 			InetAddress ip = sessionSocket.getLocalAddress();
 			byte[] ip_bytes = ip.getAddress();
-			System.out.println("ip[0] = " + ip_bytes[0] + " ip[1] = "
-					+ ip_bytes[1] + " ip[2] = " + ip_bytes[2] + " ip[3] = "
-					+ ip_bytes[3]);
-
+			if(Simpella.debug) {
+				System.out.println("ip[0] = " + ip_bytes[0] + " ip[1] = "
+						+ ip_bytes[1] + " ip[2] = " + ip_bytes[2] + " ip[3] = "
+						+ ip_bytes[3]);
+			}
 			payLoad.write(ip_bytes, 0, 4);
 			offset += 4;
 			// Speed, set arbitrarily to 10000
@@ -505,9 +513,11 @@ public class SimpellaHandleMsg {
 			queryHitHeaderBytes[21] = payLoadLength[2];
 			queryHitHeaderBytes[22] = payLoadLength[3];
 
-			for (int k = 0; k < payLoadArray.length; k++) {
-				System.out.println("QueryHit: payLoadArray[" + k + "] = "
-						+ payLoadArray[k]);
+			if(Simpella.debug) {
+				for (int k = 0; k < payLoadArray.length; k++) {
+					System.out.println("QueryHit: payLoadArray[" + k + "] = "
+							+ payLoadArray[k]);
+				}
 			}
 			// write header
 			outToClient.write(queryHitHeaderBytes, 0, 23);

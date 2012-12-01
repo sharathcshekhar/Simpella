@@ -13,7 +13,36 @@ import java.io.InputStreamReader;
  * 
  */
 public class Simpella {
-
+	
+	public static final boolean debug = true;
+	/*
+	 * Global Flags
+	 * FIND_flag - is set when find command is running,
+	 * cleared when user presses enter
+	 * MONITOR_flag - is set when monitor command is running
+	 * cleared when user presses enter
+	 */
+	private static boolean FIND_flag = false;
+	private static boolean MONITOR_flag = false;
+	
+	public static synchronized void setFINDFlag() {
+		FIND_flag = true;
+	}
+	public static synchronized void clearFINDFlag() {
+		FIND_flag = false;
+	}
+	public static synchronized void setMONITORFlag() {
+		MONITOR_flag = true;
+	}
+	public static synchronized void clearMONITORFlag() {
+		MONITOR_flag = false;
+	}
+	public static boolean is_FINDActive(){
+		return FIND_flag;
+	}
+	public static boolean is_MONITORActive(){
+		return MONITOR_flag;
+	}
 	/**
 	 * @param args
 	 */
@@ -78,7 +107,18 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("find")) {
 				System.out.println("update command");
+				setFINDFlag();
 				find(cmd_args[1]);
+				//wait until user presses enter
+				cmdFromUser.readLine();
+				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
+				clearFINDFlag();
+				int count = SimpellaConnectionStatus.getQueryhitsReceivedCount();
+				for(int i = 0; i < count; i++) {
+					SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
+					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
+						+ " \t Size:" + res.getFile_size() + " Bytes\nName: " + res.getFileName());
+				}
 				
 			} else if (cmd_args[0].equals("list")) {
 				System.out.println("list command");
@@ -87,12 +127,12 @@ public class Simpella {
 					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
 						+ " \t Size:" + res.getFile_size() + " Bytes\nName: " + res.getFileName());
 				}
-				//TODO quit
+				
 				
 			} else if (cmd_args[0].equals("clear")) {
 				System.out.println("clear command");
-				//TODO quit
-				
+				SimpellaConnectionStatus.clearQueryResultsTable();
+							
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
 				// test code
@@ -123,7 +163,10 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("monitor")) {
 				System.out.println("monitor command");
-				//TODO set monitor flag
+				setMONITORFlag();
+				cmdFromUser.readLine();
+				clearMONITORFlag();
+				
 				
 			} else if (cmd_args[0].equals("quit")) {
 				System.out.println("quit command");
