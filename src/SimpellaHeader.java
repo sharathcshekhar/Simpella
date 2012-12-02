@@ -228,12 +228,26 @@ public class SimpellaHeader {
 		payload[36] = fileSize[3];
 		
 	}
+
 	//System.arraycopy(src, src pos, dest, dest pos, len)
 	public static byte[] getSimpellaPacket(byte[] header, byte[] payLoad) {
 		byte[] packet = new byte[header.length + payLoad.length];
 		System.arraycopy(header, 0, packet, 0, header.length);
 		System.arraycopy(payLoad, 0, packet, header.length, payLoad.length);
 		return packet;
+	}	
+	/**
+	 * Sets the query payload.
+	 *
+	 * @param payload the payload
+	 * @param speed the speed
+	 * @param search the search
+	 */
+	public void setQueryPayload(byte[] payload, byte[] speed, String search){
+		//TODO size and payload validation
+		payload[24]=speed[0];
+		payload[23]=speed[1];
+		//payload[25]=search.getBytes();
 	}
 	
 	public byte[] getSimpellaPacket(byte[] payLoad) {

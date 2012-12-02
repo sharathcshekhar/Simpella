@@ -1,5 +1,5 @@
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Vector;
 
 public class SimpellaConnectionStatus {
@@ -11,7 +11,7 @@ public class SimpellaConnectionStatus {
 			new SimpellaStats[3];
 	public static SimpellaStats[] outgoingConnectionList = 
 			new SimpellaStats[3];
-	public static ArrayList<String> globalIpTable = new ArrayList<String>();
+	public static Hashtable<String,Integer> globalIpTable = new Hashtable<String,Integer>();
 	
 	private static int totalFiles = 0;
 	private static int totalFilesSize = 0;
@@ -176,14 +176,16 @@ public class SimpellaConnectionStatus {
 		simpellaFileDownloadPort = 5635; //default port
 		}
 
-	public static void checkAndAddIpToGlobalTable(String ip){
-		for(String ip1:globalIpTable){
-			if(ip.equals(ip1)){
-				return;
-			}
+	public static void checkAndAddIpToGlobalTable(String ip, int port){
+		if(!globalIpTable.containsKey(ip))
+		{
+			globalIpTable.put(ip, Integer.valueOf(port));
+			totalHosts++;
 		}
-		globalIpTable.add(ip);
-		totalHosts++;
+		else if(globalIpTable.containsKey(ip) && globalIpTable.get(ip)!=Integer.valueOf(port)){
+			globalIpTable.put(ip, Integer.valueOf(port));
+			totalHosts++;	
+		}
 	}
 	
 	// TODO check for only IP. Checking both IP and port # for testing purpose

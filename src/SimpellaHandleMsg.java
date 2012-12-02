@@ -23,7 +23,6 @@ private SimpellaStats stats;
 			String key = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.PingTable.containsKey(key) || //seen ping before
 					SimpellaRoutingTables.generatedPingList.contains(key)) { //self generated ping propagating back
-				
 				System.out.println("Ping message seen before or self ping, ignoring");
 				return;
 			} else {
@@ -57,7 +56,6 @@ private SimpellaStats stats;
 			
 			byte[] pongPayLoad = new byte[14];
 			int len = inFromClient.read(pongPayLoad, 0, 14);
-		
 			if (len != payLoadLen) {
 				System.out.println("Something has gone wrong!");
 				return;
@@ -93,8 +91,8 @@ private SimpellaStats stats;
 							+ " size = " + size_shared);
 				}			
 				//add if unique ip to global list
-				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip);
 
+				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip, port_number);
 				//set shared files data
 				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
 				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
@@ -137,7 +135,7 @@ private SimpellaStats stats;
 					} catch (IOException e) {
 						System.out
 								.println("Socket Connection Error during pong write");
-					}
+					}System.out.println("Pong received");
 				}
 			}
 			
@@ -665,7 +663,6 @@ private SimpellaStats stats;
 			// write payload
 			//  outToClient.write(payLoadArray, 0, offset);
 			outToClient.write(queryHPacket);
-
 			//set bit and pack for info command
 			stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
 			if(null!=stats){

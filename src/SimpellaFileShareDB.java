@@ -88,7 +88,7 @@ public class SimpellaFileShareDB {
 				if(result != null)
 					return result;
 			} else {
-				if(file.getAbsolutePath().equals(filename)) {
+				if(file.getName().equals(filename)) {
 					if(file.hashCode() == hashcode) {
 						return file.getAbsolutePath();
 					}
