@@ -103,18 +103,19 @@ public class Simpella {
 
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
-				//TODO broadcast ping
 				update();
+				//TODO Establish new connections if the present
+				//outgoing connections in < 2
 				
 			} else if (cmd_args[0].equals("find")) {
-				System.out.println("update command");
+				System.out.println("find command");
 				setFINDFlag();
 				find(cmd_args[1]);
 				//wait until user presses enter
 				cmdFromUser.readLine();
-				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
 				clearFINDFlag();
 				int count = SimpellaConnectionStatus.getQueryhitsReceivedCount();
+				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
 				for(int i = 0; i < count; i++) {
 					SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
 					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
@@ -175,7 +176,7 @@ public class Simpella {
 				//TODO close all sockets
 				System.exit(0);
 			} else {
-				System.out.println("Command not yet implemented!");
+				System.out.println("Invalid Command!");
 			}
 		}
 	}
@@ -195,7 +196,8 @@ public class Simpella {
 			e.printStackTrace();
 		}
 	}
-	public static void find(String searchTxt) throws Exception
+	
+	private static void find(String searchTxt) throws Exception
 	{
 		if (searchTxt.getBytes().length <= 231) {
 			SimpellaHeader queryH = new SimpellaHeader();

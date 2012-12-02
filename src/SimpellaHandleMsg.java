@@ -23,8 +23,6 @@ public class SimpellaHandleMsg {
 			String key = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.PingTable.containsKey(key) || //seen ping before
 					SimpellaRoutingTables.generatedPingList.contains(key)) { //self generated ping propagating back
-				// TODO combine if and else to one if ignore Ping if the node
-				// has seen the request!
 				System.out.println("Ping message seen before or self ping, ignoring");
 				return;
 			} else {
@@ -39,16 +37,13 @@ public class SimpellaHandleMsg {
 					sendPong(sessionSocket, header);
 				}
 			}
-			
 		} 
-		
 		/*
 		 * Handle PONG message
 		 */
 		else if (header[16] == (byte) 0x01) {
-			System.out.println("Pong received");
 			String guid = SimpellaRoutingTables.guidToString(header);
-			// Read the pong payload
+			// Read the pong payload length
 			byte[] pong_tmp_buf = new byte[4];
 			pong_tmp_buf[0] = header[19];
 			pong_tmp_buf[1] = header[20];
@@ -59,42 +54,44 @@ public class SimpellaHandleMsg {
 			
 			byte[] pongPayLoad = new byte[14];
 			int len = inFromClient.read(pongPayLoad, 0, 14);
-			ByteArrayInputStream msg = new ByteArrayInputStream(
-					pongPayLoad);
-			//read port no - 2 bytes
-			pong_tmp_buf[0] = 0; //set lower bits to 0
-			pong_tmp_buf[1] = 0;
-			msg.read(pong_tmp_buf, 2, 2);
-			int port_number = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
 			
-			//read ip address, 4 bytes
-			msg.read(pong_tmp_buf, 0, 4);
-			String ip = InetAddress.getByAddress(pong_tmp_buf).getHostAddress();
-			
-			//read no of files shared - 4 bytes
-			msg.read(pong_tmp_buf, 0, 4);
-			int no_of_file_shared = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
-			
-			//read no of size of files shared - 4 bytes
-			msg.read(pong_tmp_buf, 0, 4);
-			int size_shared = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
-			
-			System.out.println("Pong received from IP " + ip 
-					+ " port " + port_number + " No of files: " + no_of_file_shared + " size = " + size_shared);
-			
-			if (len != 14) {
+			if (len != payLoadLen) {
 				System.out.println("Something has gone wrong!");
 				return;
 			}
 			System.out.println(len + " bytes of pong payload read");
 			if (SimpellaRoutingTables.generatedPingList.contains(guid)) {
-				// pong is for me
-				// TODO read contents and store them in a store
 				System.out.println("Pong is for me!");
-				return;
+				ByteArrayInputStream msg = new ByteArrayInputStream(
+						pongPayLoad);
+				//read port no - 2 bytes
+				pong_tmp_buf[0] = 0; //set lower bits to 0
+				pong_tmp_buf[1] = 0;
+				msg.read(pong_tmp_buf, 2, 2);
+				int port_number = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
+				
+				//read ip address, 4 bytes
+				msg.read(pong_tmp_buf, 0, 4);
+				String ip = InetAddress.getByAddress(pong_tmp_buf).getHostAddress();
+				
+				//read no of files shared - 4 bytes
+				msg.read(pong_tmp_buf, 0, 4);
+				int no_of_file_shared = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
+				
+				//read no of size of files shared - 4 bytes
+				msg.read(pong_tmp_buf, 0, 4);
+				int size_shared = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
+				
+				if(Simpella.debug) {
+					System.out.println("Pong received from IP " + ip 
+							+ " port " + port_number + " No of files: " + no_of_file_shared 
+							+ " size = " + size_shared);
+				}			
 				// Initiate connections depending on the results
+				
 			} else {
 				// forward the pong using the routing table
+				// If not present in the routing table, it's a stale pong. Ignore
 				if (SimpellaRoutingTables.PingTable.containsKey(guid)) {
 					Socket pongFwdSocket = SimpellaRoutingTables.PingTable
 							.get(guid);
@@ -102,6 +99,10 @@ public class SimpellaHandleMsg {
 							+ pongFwdSocket.getInetAddress().getHostAddress());
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
+					if(header[17] == 0) {
+						//drop the packet if TTL limit has reached
+						return;
+					}
 					DataOutputStream pongToClient = null;
 					try {
 						pongToClient = new DataOutputStream(
@@ -111,7 +112,7 @@ public class SimpellaHandleMsg {
 					} catch (IOException e) {
 						System.out
 								.println("Socket Connection Error during pong write");
-					}
+					}System.out.println("Pong received");
 				}
 			}
 			
@@ -129,7 +130,9 @@ public class SimpellaHandleMsg {
 			int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
 			if (payLoadLen > 256) {
 				// report error
-				System.out.println("payload > 256 bytes!");
+				System.out.println("payload > 256 bytes, dropping the packet");
+				//discard the packet by consuming the bytes in the packet
+				inFromClient.skipBytes(payLoadLen);
 				return;
 			}
 			// consume payLoadLen amount of data irrespective of it belongs to you or not!
@@ -143,6 +146,7 @@ public class SimpellaHandleMsg {
 				
 				return;
 			} else {
+				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				ByteArrayInputStream msg = new ByteArrayInputStream(
 						queryPayLoad);
 				byte[] querySpeed = new byte[2];
@@ -160,14 +164,10 @@ public class SimpellaHandleMsg {
 				 * Crude way of setting GUID 
 				 * TODO make it more elegant
 				 */
-				System.out.println("message type " + header[16]);
 				replyWithQueryHit(sessionSocket, searchString, header);
-				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
-					System.out.println("broadcasting query with message type "
-							+ header[16]);
 					broadcastQuery(header, queryPayLoad, sessionSocket);
 				}
 			}
@@ -185,48 +185,47 @@ public class SimpellaHandleMsg {
 			qHit_tmp_buffer[2] = header[21];
 			qHit_tmp_buffer[3] = header[22];
 			int payLoadLen = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-			System.out.println("Query-hit message received with payload len = "
-					+ payLoadLen);
-
+			
 			byte[] queryHitPayLoad = new byte[payLoadLen];
 			int len = inFromClient.read(queryHitPayLoad, 0, payLoadLen);
-
-			System.out.println(len + " Bytes of data read from query");
-
-			ByteArrayInputStream msg = new ByteArrayInputStream(queryHitPayLoad);
-			int no_of_files = msg.read();
-			qHit_tmp_buffer[0] = (byte) 0x00;
-			qHit_tmp_buffer[1] = (byte) 0x00;
-			msg.read(qHit_tmp_buffer, 2, 2);
-			int port_no = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-			byte[] ip_address = new byte[4];
-			msg.read(ip_address);
-			msg.read(qHit_tmp_buffer);
-			int speed = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-			System.out.println("no of files " + no_of_files + " port_num = "
-					+ port_no + " ip = "
-					+ InetAddress.getByAddress(ip_address).getHostAddress()
-					+ " Speed = " + speed);
-
-			int k;
-			for (k = 0; k < len; k++) {
-				System.out.println("Received QueryHit payLoad[" + k + "] = "
-						+ queryHitPayLoad[k]);
+			
+			if(Simpella.debug) {
+			System.out.println("Query-hit message received with payload len = "
+					+ payLoadLen + "bytes read = " + len);
 			}
-			// 11 bytes would be header, 16 bytes trailer. Middle (payLoadLen -
-			// 10 - 16)
-			// should be file info
-						
+
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
+				
 				System.out.println("Recived Query-hit for me! :)");
-				//TODO push the results to a list
+				ByteArrayInputStream msg = new ByteArrayInputStream(queryHitPayLoad);
+				int no_of_files = msg.read();
+				qHit_tmp_buffer[0] = (byte) 0x00;
+				qHit_tmp_buffer[1] = (byte) 0x00;
+				msg.read(qHit_tmp_buffer, 2, 2);
+				int port_no = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
+				byte[] ip_address = new byte[4];
+				msg.read(ip_address);
+				msg.read(qHit_tmp_buffer);
+				int speed = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
+				if (Simpella.debug) {
+					System.out.println("no of files " + no_of_files
+							+ " port_num = " + port_no + " ip = "
+							+ InetAddress.getByAddress(ip_address).getHostAddress()
+							+ " Speed = " + speed);
+					int k;
+					for (k = 0; k < len; k++) {
+						System.out.println("Received QueryHit payLoad[" + k
+								+ "] = " + queryHitPayLoad[k]);
+					}
+				}
 				if(Simpella.is_FINDActive()) {
 					SimpellaConnectionStatus.addToQueryhitsReceivedCount(no_of_files);
 					System.out.println(SimpellaConnectionStatus.getQueryhitsReceivedCount() + 
 							" Responses received");
 				}
 				int bytes_read = 0;
+				// 11 bytes would be header, 16 bytes trailer
 				while (bytes_read < (payLoadLen - 11 - 16)) {
 					SimpellaQueryResults queryHitRes = new SimpellaQueryResults();
 					queryHitRes.setIpAddress(InetAddress.getByAddress(ip_address).getHostAddress());
@@ -262,17 +261,23 @@ public class SimpellaHandleMsg {
 				}
 				
 				byte[] serventID = new byte[16];
-				msg.read(serventID);
+				msg.read(serventID); //no use of this
 
 			} else if (SimpellaRoutingTables.QueryTable.containsKey(guid)) {
 				// if not route to the appropriate node
 				Socket queryHitFwdSocket = SimpellaRoutingTables.QueryTable
 						.get(guid);
-				System.out.println("Query-hit received for ip "
-						+ queryHitFwdSocket.getInetAddress().getHostAddress()
-						+ ":" + queryHitFwdSocket.getPort());
+				if (Simpella.debug) {
+					System.out.println("Query-hit received for ip "
+							+ queryHitFwdSocket.getInetAddress().getHostAddress()
+							+ ":" + queryHitFwdSocket.getPort());
+				}
 				header[17]--; // decrement TTL
 				header[18]++; // Increment hops
+				if (header[17] == 0) {
+					//drop the packet
+					return;
+				}
 				DataOutputStream queryHitToClient = null;
 				try {
 					queryHitToClient = new DataOutputStream(
@@ -286,7 +291,6 @@ public class SimpellaHandleMsg {
 			} else {
 				System.out.println("Stale query-hit, ignoring");
 			}
-			
 		}
 	}
 
@@ -446,13 +450,14 @@ public class SimpellaHandleMsg {
 
 	public void replyWithQueryHit(Socket sessionSocket,
 			String searchString, byte[] queryHeader) throws IOException {
+		
 		SimpellaHeader queryHitHeader = new SimpellaHeader();
 		queryHitHeader.initializeHeader();
 		// retain the msgID in query header in the query-hit header
 		queryHitHeader.setMsgId(queryHeader);
 		queryHitHeader.setMsgType("queryhit");
 		SimpellaFileShareDB db = new SimpellaFileShareDB();
-		// db.setSharedDirectory("/home/sharath/simpella_share");
+		
 		System.out.println("In replyWithQuery, searchString " + searchString);
 		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
 		Iterator<Object> itr1 = searchResults.iterator();
@@ -460,32 +465,30 @@ public class SimpellaHandleMsg {
 			Integer fileIndex = (Integer) itr1.next();
 			Long size = (Long) itr1.next();
 			String filename = (String) itr1.next();
-			System.out.println("File index = " + fileIndex + " size in long "
-					+ size + " size in int = " + size.intValue() + " filename "
-					+ filename);
+			if(Simpella.debug){
+				System.out.println("File index = " + fileIndex + " size in long "
+						+ size + " size in int = " + size.intValue() + " filename "
+						+ filename);
+				System.out.println("replying with a query-hit");
+			}
 		}
 		
-		System.out.println("replying with a query-hit");
 		Iterator<Object> itr = searchResults.iterator();
-
 		ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
 
 		if (!searchResults.isEmpty()) {
-			// TODO Reply with a query-hit
 			byte[] tmp = new byte[4];
 			int offset = 0;
 			// write no. of files to 1st byte
 			tmp[0] = (byte) (searchResults.size() / 3);
-			// payLoad.write(tmp, offset, 1);
 			payLoad.write(tmp, 0, 1);
 			offset += 1;
-			// byte 1-2 is file download Port, 8888 for now
+			// byte 1-2 is file download Port
 			tmp = SimpellaUtils.toBytes(SimpellaConnectionStatus.simpellaFileDownloadPort);
 			payLoad.write(tmp, 2, 2);
 			offset += 2;
 			
-			InetAddress ip = sessionSocket.getLocalAddress();
-			byte[] ip_bytes = ip.getAddress();
+			byte[] ip_bytes = sessionSocket.getLocalAddress().getAddress();
 			if(Simpella.debug) {
 				System.out.println("ip[0] = " + ip_bytes[0] + " ip[1] = "
 						+ ip_bytes[1] + " ip[2] = " + ip_bytes[2] + " ip[3] = "
@@ -524,19 +527,18 @@ public class SimpellaHandleMsg {
 			payLoadArray = payLoad.toByteArray();
 			DataOutputStream outToClient = new DataOutputStream(
 					sessionSocket.getOutputStream());
-			// outToClient.write(header, 23, offset);
+			queryHitHeader.setPayLoadLength(offset);
 			byte[] queryHitHeaderBytes = queryHitHeader.getHeader();
-
-			// TODO better way to set length
+			/*
 			byte[] payLoadLength = SimpellaUtils.toBytes(offset);
 			queryHitHeaderBytes[19] = payLoadLength[0];
 			queryHitHeaderBytes[20] = payLoadLength[1];
 			queryHitHeaderBytes[21] = payLoadLength[2];
 			queryHitHeaderBytes[22] = payLoadLength[3];
-
+			*/
 			if(Simpella.debug) {
-				System.out.println("offset in int " + offset + "0:1:2:3" +  payLoadLength[0] +
-						 payLoadLength[1] +  payLoadLength[2] +  payLoadLength[3]);
+				System.out.println("offset in int " + offset + " 0:1:2:3 " +  queryHitHeaderBytes[19] +
+						queryHitHeaderBytes[20] +  queryHitHeaderBytes[21] +  queryHitHeaderBytes[22]);
 				for (int k = 0; k < payLoadArray.length; k++) {
 					System.out.println("QueryHit: payLoadArray[" + k + "] = "
 							+ payLoadArray[k]);
@@ -546,11 +548,9 @@ public class SimpellaHandleMsg {
 			outToClient.write(queryHitHeaderBytes, 0, 23);
 			// write payload
 			outToClient.write(payLoadArray, 0, offset);
-			}
-
+		}
 	}
 	
-	//TODO should take TTL & hops as input
 	public void sendPing(Socket clientSocket) throws Exception
 	{
 		SimpellaHeader pingH = new SimpellaHeader();
@@ -559,9 +559,9 @@ public class SimpellaHandleMsg {
 		pingH.setMsgId();
 		String guid = SimpellaRoutingTables.guidToString(pingH.getHeader());
 		SimpellaRoutingTables.generatedPingList.add(guid);
-		//String s1 = new String(pingH.getHeader());
-		System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
-		
+		if(Simpella.debug) {
+			System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
+		}
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(pingH.getHeader());
