@@ -1,5 +1,4 @@
 import java.net.Socket;
-import java.util.Hashtable;
 
 
 
@@ -250,7 +249,6 @@ public class SimpellaHeader {
 	//	b.putInt(clientSocket.getLocalPort());
 		byte[] payload_port = SimpellaUtils.toBytes(SimpellaConnectionStatus.simpellaNetPort);
 		
-	//TODO Endianness validation
 	//	payload_port = b.array();
 		payload[24] = payload_port[3];
 		payload[23] = payload_port[2];
@@ -295,21 +293,6 @@ public class SimpellaHeader {
 		payload[24]=speed[0];
 		payload[23]=speed[1];
 		//payload[25]=search.getBytes();
-	}
-	//TODO
-	public void setQueryHitPayload(Hashtable<Integer, String> searchResults) {
-		//byte[] payload;
-		/*
-		 * payload[0] = no. of files matched
-		 * payload[1-2] = port
-		 * payload[3-6] = ip
-		 * payload[7 - 10] = speed = 10,000
-		 * FOR ALL files
-		 * payload[11 - 14] = file index
-		 * payload[15 - 18] = file_size
-		 * payload[18 - ] = file name 
-		 * payload[last 16 byte] = unique ID of the servent
-		 */
 	}
 	
 

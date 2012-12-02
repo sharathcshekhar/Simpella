@@ -56,7 +56,8 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(SimpellaIPUtils.getLocalIPAddress().getHostAddress());
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(SimpellaIPUtils.getLocalIPAddress().getHostAddress(),
+				SimpellaConnectionStatus.simpellaNetPort);
 		
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
@@ -115,18 +116,19 @@ public class Simpella {
 				
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
-				//TODO broadcast ping
 				update();
+				//TODO Establish new connections if the present
+				//outgoing connections in < 2
 				
 			} else if (cmd_args[0].equals("find")) {
-				System.out.println("update command");
+				System.out.println("find command");
 				setFINDFlag();
 				find(cmd_args[1]);
 				//wait until user presses enter
 				cmdFromUser.readLine();
-				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
 				clearFINDFlag();
 				int count = SimpellaConnectionStatus.getQueryhitsReceivedCount();
+				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
 				for(int i = 0; i < count; i++) {
 					SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
 					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
@@ -158,6 +160,15 @@ public class Simpella {
 				//TODO implement download
 				
 			} else if (cmd_args[0].equals("share")) {
+				if(cmd_args[1].equals("-i")){
+					if(!SimpellaFileShareDB.sharedDirectory.isEmpty()){
+						System.out.println("Current shared directory is : "+SimpellaFileShareDB.sharedDirectory);
+					}
+					else{
+						System.out.println("No directory is shared on this host");
+					}
+				}
+				else{
 				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
 				System.out.println("sharing directory " + sharedDirectory);
 				File share = new File(sharedDirectory);
@@ -166,6 +177,7 @@ public class Simpella {
 					continue;
 				}
 				SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
+				}
 				
 			} else if (cmd_args[0].equals("scan")) {
 				System.out.println("scan command");
@@ -186,7 +198,7 @@ public class Simpella {
 				//TODO close all sockets
 				System.exit(0);
 			} else {
-				System.out.println("Command not yet implemented!");
+				System.out.println("Invalid Command!");
 			}
 		}
 	}
@@ -206,6 +218,7 @@ public class Simpella {
 			e.printStackTrace();
 		}
 	}
+
 
 	private static void infoCommand(String[] cmd) {
 		if (cmd[1].equalsIgnoreCase("h")) {
@@ -315,6 +328,7 @@ public class Simpella {
 
 
 	public static void find(String searchTxt) throws Exception
+
 	{
 		if (searchTxt.getBytes().length <= 231) {
 			SimpellaHeader queryH = new SimpellaHeader();

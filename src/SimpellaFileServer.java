@@ -125,15 +125,16 @@ public class SimpellaFileServer {
 		String requestString = firstLineInRequest.substring(4, firstLineInRequest.length() - 9);
 		System.out.println("/get/FileIndex/Filename/ = " + requestString);
 		String[] parsedStrings = requestString.split("/");
-		System.out.println("Parsed Strings:" + parsedStrings[0] + parsedStrings[1] 
-				+ parsedStrings[2] + parsedStrings[3]);
+		/*System.out.println("Parsed Strings:" + parsedStrings[0] + parsedStrings[1] 
+				+ parsedStrings[2] + parsedStrings[3]);*/
 		//int fileIndex = Integer.parseInt(parsedStrings[2]);
 		//String filename = parsedStrings[3];
 		
 	//	SimpellaFileShareDB db = new SimpellaFileShareDB();
 	//	String file_fullPath = db.getFullFilePath(filename, fileIndex);
 		// test code
-		String file_fullPath = "/home/sharath/simpella_share/share3/01 Yarighelhana.mp3";
+		SimpellaFileShareDB sf = new SimpellaFileShareDB();
+		String file_fullPath = sf.getFullFilePath(parsedStrings[3].trim(), Integer.parseInt(parsedStrings[2]));
 		String response = null;
 		/*
 		if(file_fullPath == null){

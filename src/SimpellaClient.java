@@ -34,7 +34,7 @@ public class SimpellaClient {
 		}
 		clientSocket = new Socket(connectionIP, connectionPort);
 		//add if unique ip to global list
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP);
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP,connectionPort);
 		
 		String connect_cmd = "SIMPELLA CONNECT/0.6\r\n";
 		DataOutputStream outToServer = new DataOutputStream(

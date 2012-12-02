@@ -49,21 +49,10 @@ public class SimpellaFileClient {
 
 	public void downloadFile(int index) {
 		Socket clientSocket = null;
-		this.fileIndex = index;
-		boolean connPresent = false;
-		for(SimpellaQueryResults q : SimpellaConnectionStatus.queryResults){
-			if(q.file_index==index){
-				connPresent=true;
-				this.fileName=q.fileName;
-				this.serverIP = q.ipAddress;
-				this.serverPort = q.port;
-				break;
-			}
-		}
-		if(!connPresent){
-			System.out.println("Invalid file index");
-			return;
-		}
+		this.fileIndex = SimpellaConnectionStatus.queryResults.get(index-1).file_index;
+		this.fileName = SimpellaConnectionStatus.queryResults.get(index-1).fileName;
+		this.serverIP=SimpellaConnectionStatus.queryResults.get(index-1).getIpAddress();
+		this.serverPort=SimpellaConnectionStatus.queryResults.get(index-1).getPort();
 		String request = "GET /get/" + fileIndex + "/" + fileName
 				+ " HTTP/1.1\r\n";
 		String userAgent = "User-Agent: Simpella\r\n";
@@ -115,7 +104,7 @@ public class SimpellaFileClient {
 		}
 		
 		FileOutputStream fo = null;
-		File tmpFile = new File("." + fileName);
+		File tmpFile = new File(fileName+"_temp");
 		File newFile = new File(fileName);
 		try {
 			fo = new FileOutputStream(tmpFile);
@@ -145,14 +134,19 @@ public class SimpellaFileClient {
 		} catch (IOException e) {
 			System.out.println("Error while downloading file");
 		}
+		newFile.delete();
 		// rename file
-		if (!tmpFile.renameTo(newFile)) {
+		/*if (!tmpFile.renameTo(newFile)) {
 			System.out.println("File already exists");
 			return;
-		}
+		}*/
 		try {
 			clientSocket.close();
 			out.close();
+			if (!tmpFile.renameTo(newFile)) {
+				System.out.println("File already exists");
+				return;
+			}
 		} catch (IOException e) {
 			System.out.println("Sockets closed abruplty");
 		}
