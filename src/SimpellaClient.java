@@ -78,10 +78,11 @@ public class SimpellaClient {
 		
 		int len = 0;
 		SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
-		if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
-			System.out.println("Sending ping message");
-			msgHandler.sendPing(sessionSocket);
-		}
+	//	if(SimpellaConnectionStatus.outgoingConnectionCount == 1) {
+		// send ping to the new connection	
+		System.out.println("Sending ping message");
+		msgHandler.sendPing(sessionSocket);
+	//	}
 		while (true) {
 			try {
 			byte[] header = new byte[23];

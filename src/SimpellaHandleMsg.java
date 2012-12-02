@@ -317,7 +317,12 @@ public class SimpellaHandleMsg {
 				+ Arrays.toString(pongPacket));
 		}
 	}
-
+	
+	/*
+	 * If 'sender' is a valid socket, send the message to all connections,
+	 * except sender. If sender = null, send message to all existing
+	 * connections
+	 */
 	public void broadcastPing(byte[] pingMsg, Socket sender)
 			throws Exception {
 		Socket clientSocket = null;
@@ -328,16 +333,20 @@ public class SimpellaHandleMsg {
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
 			clientIP = SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
 			int clientPort = SimpellaConnectionStatus.incomingConnectionList[i].remotePort;
-			if (!(clientIP.equals(""))
+/*			if (!(clientIP.equals(""))
 					&& !((sender.getInetAddress().getHostAddress()
-							.equals(clientIP)) && (sender.getPort() == clientPort))) {
-				/* send to everyone apart from this node */
-				System.out.println("sending ping to IP: " + clientIP
-						+ " Port = " + clientPort);
-				DataOutputStream outToServents = new DataOutputStream(
-						clientSocket.getOutputStream());
-				outToServents.write(pingMsg);
-				
+							.equals(clientIP)) && (sender.getPort() == clientPort))) { */
+			if (!clientIP.equals("")) {
+				if ((sender == null)
+						|| !((sender.getInetAddress().getHostAddress()
+								.equals(clientIP)) && (sender.getPort() == clientPort))) {
+					/* send to everyone apart from this node */
+					System.out.println("sending ping to IP: " + clientIP
+							+ " Port = " + clientPort);
+					DataOutputStream outToServents = new DataOutputStream(
+							clientSocket.getOutputStream());
+					outToServents.write(pingMsg);
+				}
 			}
 		}
 		for (int j = 0; j < 3; j++) {
@@ -345,16 +354,22 @@ public class SimpellaHandleMsg {
 
 			clientIP = SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
 			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[j].remotePort;
-			if (!(clientIP.equals(""))
+
+/*			if (!(clientIP.equals(""))
 					&& !((sender.getInetAddress().getHostAddress()
-							.equals(clientIP)) && (sender.getPort() == clientPort))) {
-				System.out.println("sending ping to IP: " + clientIP
-						+ " Port = " + clientPort);
-				/* send to everyone apart from this node */
-				DataOutputStream outToServents = new DataOutputStream(
-						clientSocket.getOutputStream());
-				outToServents.write(pingMsg);
-				
+							.equals(clientIP)) && (sender.getPort() == clientPort))) { 
+*/
+			if (!clientIP.equals("")) {
+				if ((sender == null)
+						|| !((sender.getInetAddress().getHostAddress()
+								.equals(clientIP)) && (sender.getPort() == clientPort))) {
+					System.out.println("sending ping to IP: " + clientIP
+							+ " Port = " + clientPort);
+					/* send to everyone apart from this node */
+					DataOutputStream outToServents = new DataOutputStream(
+							clientSocket.getOutputStream());
+					outToServents.write(pingMsg);
+				}
 			}
 		}
 	}

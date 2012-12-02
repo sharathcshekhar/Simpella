@@ -104,6 +104,7 @@ public class Simpella {
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
 				//TODO broadcast ping
+				update();
 				
 			} else if (cmd_args[0].equals("find")) {
 				System.out.println("update command");
@@ -180,6 +181,20 @@ public class Simpella {
 	}
 	
 
+	private static void update() {
+		SimpellaHeader pingH = new SimpellaHeader();
+		pingH.initializeHeader();
+		pingH.setMsgId();
+		byte[] pingPacket = pingH.getHeader();
+		SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
+		System.out.println("Sending Ping broadcast packets to all known connections");
+		try {
+			msgHandler.broadcastPing(pingPacket, null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public static void find(String searchTxt) throws Exception
 	{
 		if (searchTxt.getBytes().length <= 231) {
@@ -190,14 +205,6 @@ public class Simpella {
 			queryH.setPayLoadLength(2 + searchTxt.getBytes().length + 1); // +2 for speed +1 for \0
 						
 			byte[] queryHeader = queryH.getHeader();
-			
-			//TODO set the length of the payload more elegantly :)
-			/*
-			queryHeader[19] = (byte)0x00;
-			queryHeader[20] = (byte)0x00;
-			queryHeader[21] = (byte)0x00;
-			queryHeader[22] = (byte)(2 + searchTxt.getBytes().length + 1); // +2 for speed +1 for \0
-			*/
 			
 			// minimum speed, set to 0 for simpella
 			byte[] querySpeed = new byte[2];
