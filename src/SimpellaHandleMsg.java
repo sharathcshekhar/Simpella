@@ -21,9 +21,12 @@ public class SimpellaHandleMsg {
 		if (header[16] == (byte) 0x00) {
 			System.out.println("Ping received");
 			String key = SimpellaRoutingTables.guidToString(header);
-			if (SimpellaRoutingTables.PingTable.containsKey(key)) {
+			if (SimpellaRoutingTables.PingTable.containsKey(key) || //seen ping before
+					SimpellaRoutingTables.generatedPingList.contains(key)) { //self generated ping propagating back
 				// TODO combine if and else to one if ignore Ping if the node
 				// has seen the request!
+				System.out.println("Ping message seen before or self ping, ignoring");
+				return;
 			} else {
 				SimpellaRoutingTables.insertPingTable(key, sessionSocket);
 				if (header[17] > 1) {
@@ -87,7 +90,7 @@ public class SimpellaHandleMsg {
 			if (SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				// pong is for me
 				// TODO read contents and store them in a store
-				
+				System.out.println("Pong is for me!");
 				return;
 				// Initiate connections depending on the results
 			} else {
@@ -118,25 +121,28 @@ public class SimpellaHandleMsg {
 		 * Handle QUERY message 
 		 */
 		else if (header[16] == (byte) 0x80) {
-			// TODO handle message
+			byte[] tmp = new byte[4];
+			tmp[0] = header[19];
+			tmp[1] = header[20];
+			tmp[2] = header[21];
+			tmp[3] = header[22];
+			int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
+			if (payLoadLen > 256) {
+				// report error
+				System.out.println("payload > 256 bytes!");
+				return;
+			}
+			// consume payLoadLen amount of data irrespective of it belongs to you or not!
+			byte[] queryPayLoad = new byte[payLoadLen];
+			int len = inFromClient.read(queryPayLoad, 0, payLoadLen);
 			System.out.println("Query-message");
 			String queryid = SimpellaRoutingTables.guidToString(header);
-			if (SimpellaRoutingTables.QueryTable.containsKey(queryid)) {
-				System.out.println("Query message seen before, ignoring");
+			if (SimpellaRoutingTables.QueryTable.containsKey(queryid) || // seen query before
+					SimpellaRoutingTables.generatedQueryList.contains(queryid)) { // my own query
+				System.out.println("Query message seen before or self query, ignoring");
+				
+				return;
 			} else {
-				byte[] tmp = new byte[4];
-				tmp[0] = header[19];
-				tmp[1] = header[20];
-				tmp[2] = header[21];
-				tmp[3] = header[22];
-				int payLoadLen = SimpellaUtils.byteArrayToInt(tmp);
-				if (payLoadLen > 256) {
-					// report error
-					System.out.println("payload > 256 bytes!");
-					return;
-				}
-				byte[] queryPayLoad = new byte[payLoadLen];
-				int len = inFromClient.read(queryPayLoad, 0, payLoadLen);
 				ByteArrayInputStream msg = new ByteArrayInputStream(
 						queryPayLoad);
 				byte[] querySpeed = new byte[2];
@@ -146,7 +152,6 @@ public class SimpellaHandleMsg {
 				len = msg.read(rawQueryString, 0, payLoadLen - 2);
 				if (rawQueryString[len - 1] != (byte) 0x00) {
 					System.out.println("Not null terminatd String, error!");
-					
 					return;
 				}
 				String searchString = new String(rawQueryString);
@@ -177,7 +182,7 @@ public class SimpellaHandleMsg {
 			byte[] qHit_tmp_buffer = new byte[4];
 			qHit_tmp_buffer[0] = header[19];
 			qHit_tmp_buffer[1] = header[20];
-			qHit_tmp_buffer[2] = header[20];
+			qHit_tmp_buffer[2] = header[21];
 			qHit_tmp_buffer[3] = header[22];
 			int payLoadLen = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 			System.out.println("Query-hit message received with payload len = "
@@ -216,16 +221,17 @@ public class SimpellaHandleMsg {
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
 				System.out.println("Recived Query-hit for me! :)");
 				//TODO push the results to a list
-				int bytes_read = 0;
 				if(Simpella.is_FINDActive()) {
 					SimpellaConnectionStatus.addToQueryhitsReceivedCount(no_of_files);
 					System.out.println(SimpellaConnectionStatus.getQueryhitsReceivedCount() + 
 							" Responses received");
 				}
+				int bytes_read = 0;
 				while (bytes_read < (payLoadLen - 11 - 16)) {
 					SimpellaQueryResults queryHitRes = new SimpellaQueryResults();
 					queryHitRes.setIpAddress(InetAddress.getByAddress(ip_address).getHostAddress());
 					queryHitRes.setPort(port_no);
+					
 					msg.read(qHit_tmp_buffer);
 					int file_index = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 					bytes_read += 4;
@@ -514,6 +520,8 @@ public class SimpellaHandleMsg {
 			queryHitHeaderBytes[22] = payLoadLength[3];
 
 			if(Simpella.debug) {
+				System.out.println("offset in int " + offset + "0:1:2:3" +  payLoadLength[0] +
+						 payLoadLength[1] +  payLoadLength[2] +  payLoadLength[3]);
 				for (int k = 0; k < payLoadArray.length; k++) {
 					System.out.println("QueryHit: payLoadArray[" + k + "] = "
 							+ payLoadArray[k]);

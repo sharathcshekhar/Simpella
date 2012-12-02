@@ -39,9 +39,11 @@ public class SimpellaFileShareDB {
 	public ArrayList<Object> getMatchingFiles(String pattern)
 	{
 		String[] keys = pattern.split("\\s+");
-		System.out.println("In getMatchingFiles, string = " + pattern);
-		for(String tmp : keys) {
-			System.out.println("keys = " + tmp);
+		if(Simpella.debug) {
+			System.out.println("In getMatchingFiles, string = " + pattern);
+			for(String tmp : keys) {
+				System.out.println("keys = " + tmp);
+			}
 		}
 		//Hashtable<Integer, String> results = recurssiveFileSearch(keys, sharedDirectory);
 		ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
@@ -63,11 +65,11 @@ public class SimpellaFileShareDB {
 			if(filename.isDirectory()) {
 				recurssiveScanDir(filename.toString());
 			} else {
-				//TODO maintain the below info in a table
-				//filename:path:size:index:custom-info
-				System.out.println("File scanned = " + filename.getName() + 
-						" size = " + filename.length() + 
-						" full path = " + filename.getAbsolutePath());
+				if(Simpella.debug) {
+					System.out.println("File scanned = " + filename.getName() + 
+							" size = " + filename.length() + 
+							" full path = " + filename.getAbsolutePath());
+				}
 				noOfFiles ++;
 				sizeOfFiles = sizeOfFiles + (int)filename.length();
 			}

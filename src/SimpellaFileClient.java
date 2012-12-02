@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class SimpellaFileClient {
-	
+	//TODO use SimpellaQueryResults object instead.
 	private int fileIndex;
 	private String fileName;
 	private String serverIP;

@@ -258,7 +258,7 @@ public class SimpellaHeader {
 				payload_port[2] + payload_port[3]) ;
 		
 		byte[] ipAddr = new byte[4]; 
-		ipAddr = clientSocket.getInetAddress().getAddress();
+		ipAddr = clientSocket.getLocalAddress().getAddress();
 		payload[28] = ipAddr[3];
 		payload[27] = ipAddr[2];
 		payload[26] = ipAddr[1];

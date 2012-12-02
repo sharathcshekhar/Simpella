@@ -145,6 +145,7 @@ public class Simpella {
 				//TODO implement download
 				
 			} else if (cmd_args[0].equals("share")) {
+				//TODO share -i to display only the shared directory
 				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
 				System.out.println("sharing directory " + sharedDirectory);
 				File share = new File(sharedDirectory);
