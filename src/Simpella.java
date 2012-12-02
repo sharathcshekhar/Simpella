@@ -3,6 +3,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Formatter;
 
 /**
  * 
@@ -24,6 +25,7 @@ public class Simpella {
 	 */
 	private static boolean FIND_flag = false;
 	private static boolean MONITOR_flag = false;
+	public static boolean printDwnload = false;
 	
 	public static synchronized void setFINDFlag() {
 		FIND_flag = true;
@@ -54,6 +56,7 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(SimpellaIPUtils.getLocalIPAddress().getHostAddress());
 		
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
@@ -101,6 +104,15 @@ public class Simpella {
 				client.setConnectionPort(Integer.parseInt(cmd_args[2]));
 				client.connect();
 
+			} else if(cmd_args[0].equals("info")){
+				System.out.println("info command");
+				if(cmd_args.length!=2){
+					System.out.println("Invalid arguments");
+					continue;
+				} else{
+					infoCommand(cmd_args);
+				}
+				
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
 				update();
@@ -137,17 +149,16 @@ public class Simpella {
 							
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
-				// test code
 				SimpellaFileClient fileDw = new SimpellaFileClient();
+				/*// test code
 				fileDw.setFileIndex(1);
 				fileDw.setFileName("test.mp3");
 				fileDw.setServerIP("localhost");
-				fileDw.setServerPort(8080);
-				fileDw.downloadFile();
+				fileDw.setServerPort(8080);*/
+				fileDw.downloadFile(Integer.parseInt(cmd_args[1]));
 				//TODO implement download
 				
 			} else if (cmd_args[0].equals("share")) {
-				//TODO share -i to display only the shared directory
 				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
 				System.out.println("sharing directory " + sharedDirectory);
 				File share = new File(sharedDirectory);
@@ -196,8 +207,117 @@ public class Simpella {
 			e.printStackTrace();
 		}
 	}
-	
-	private static void find(String searchTxt) throws Exception
+
+
+	private static void infoCommand(String[] cmd) {
+		if (cmd[1].equalsIgnoreCase("h")) {
+			Formatter info_fmt = new Formatter();
+			info_fmt.format("%-15s %-24s %-10s\n", "Hosts", "Files", "Size");
+			info_fmt.format("%-15d %-24s %-24s", SimpellaConnectionStatus
+					.getTotalHosts(), SimpellaUtils
+					.memFormat(SimpellaConnectionStatus.getTotalFiles()),
+					SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getTotalFilesSize()));
+			System.out.println(info_fmt);
+		} else if (cmd[1].equalsIgnoreCase("c")) {
+			Formatter info_fmt = new Formatter();
+			for (int i = 0; i < SimpellaConnectionStatus.incomingConnectionCount; i++) {
+				info_fmt.format(
+						"%-30s %-30s %-30s",
+						SimpellaConnectionStatus.incomingConnectionList[i]
+								.getRemoteIP()
+								+ ":"
+								+ SimpellaConnectionStatus.incomingConnectionList[i]
+										.getRemotePort(),
+						"Packs:"
+								+ SimpellaConnectionStatus.incomingConnectionList[i]
+										.getSentPacks()
+								+ ":"
+								+ SimpellaConnectionStatus.incomingConnectionList[i]
+										.getRecvdPacks(),
+						"Bytes:"
+								+ SimpellaUtils
+										.memFormat(SimpellaConnectionStatus.incomingConnectionList[i]
+												.getSentBytes())
+								+ ":"
+								+ SimpellaUtils
+										.memFormat(SimpellaConnectionStatus.incomingConnectionList[i]
+												.getRecvdBytes()));
+				System.out.println(info_fmt);
+			}
+			for (int i = 0; i < SimpellaConnectionStatus.outgoingConnectionCount; i++) {
+				info_fmt.format(
+						"%-30s %-30s %-30s",
+						SimpellaConnectionStatus.outgoingConnectionList[i]
+								.getRemoteIP()
+								+ ":"
+								+ SimpellaConnectionStatus.outgoingConnectionList[i]
+										.getRemotePort(),
+						"Packs:"
+								+ SimpellaConnectionStatus.outgoingConnectionList[i]
+										.getSentPacks()
+								+ ":"
+								+ SimpellaConnectionStatus.outgoingConnectionList[i]
+										.getRecvdPacks(),
+						"Bytes:"
+								+ SimpellaUtils
+										.memFormat(SimpellaConnectionStatus.outgoingConnectionList[i]
+												.getSentBytes())
+								+ ":"
+								+ SimpellaUtils
+										.memFormat(SimpellaConnectionStatus.outgoingConnectionList[i]
+												.getRecvdBytes()));
+				System.out.println(info_fmt);
+			}
+
+		} else if (cmd[1].equalsIgnoreCase("n")) {
+			System.out.println("NET STATUS:");
+			System.out.println("Msg Received: "
+					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getTotalPacketsRecvd())
+					+ "    "
+					+ "Msg Sent: "
+					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getTotalPacketsSent()));
+			System.out.println("Unique GUIds in memory: "
+					+ SimpellaConnectionStatus.getTotalUniqueGUIds());
+			System.out.println("Bytes Received: "
+					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getTotalBytesRecvd())
+					+ "    "
+					+ "Bytes Sent: "
+					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getTotalBytesSent()));
+		} else if (cmd[1].equalsIgnoreCase("d")) {
+			System.out.println("DOWNLOAD STATS");
+			printDwnload=true;
+		} else if (cmd[1].equalsIgnoreCase("q")) {
+			System.out.println("Queries: "
+					+ SimpellaConnectionStatus.getQueriesRecvd() + "   "
+					+ "Responses sent: "
+					+ SimpellaConnectionStatus.getResponsesSent());
+
+		} else if (cmd[1].equalsIgnoreCase("s")) {
+			SimpellaFileShareDB fileShareDb = new SimpellaFileShareDB();
+			fileShareDb.scanSharedDirectory();
+			SimpellaConnectionStatus.setLocalFilesShared(fileShareDb
+					.getNoOfFiles());
+			SimpellaConnectionStatus.setLocalFilesSharedSize(fileShareDb
+					.getSizeOfFiles());
+			System.out.println("Num Shared: "
+					+ SimpellaConnectionStatus.getLocalFilesShared()
+					+ "   "
+					+ "Size Shared: "
+					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
+							.getLocalFilesSharedSize()));
+		} else {
+			System.out.println("invalid info value");
+		}
+	}
+
+
+	public static void find(String searchTxt) throws Exception
+
 	{
 		if (searchTxt.getBytes().length <= 231) {
 			SimpellaHeader queryH = new SimpellaHeader();

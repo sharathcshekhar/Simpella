@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 public class SimpellaHandleMsg {
-
+private SimpellaStats stats;
 	public void handleMsg(byte[] header, Socket sessionSocket) throws Exception {
 
 		DataInputStream inFromClient = new DataInputStream(
@@ -26,6 +26,9 @@ public class SimpellaHandleMsg {
 				System.out.println("Ping message seen before or self ping, ignoring");
 				return;
 			} else {
+				//set the count of total unique IDs
+				 int uniqueId =  SimpellaConnectionStatus.getTotalUniqueGUIds();
+				 SimpellaConnectionStatus.setTotalUniqueGUIds(++uniqueId);
 				SimpellaRoutingTables.insertPingTable(key, sessionSocket);
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
@@ -54,6 +57,7 @@ public class SimpellaHandleMsg {
 			
 			byte[] pongPayLoad = new byte[14];
 			int len = inFromClient.read(pongPayLoad, 0, 14);
+
 			
 			if (len != payLoadLen) {
 				System.out.println("Something has gone wrong!");
@@ -87,8 +91,17 @@ public class SimpellaHandleMsg {
 							+ " port " + port_number + " No of files: " + no_of_file_shared 
 							+ " size = " + size_shared);
 				}			
-				// Initiate connections depending on the results
-				
+				//add if unique ip to global list
+				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip);
+
+				//set shared files data
+				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
+				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
+				int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
+				SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+size_shared);
+				//TODO Initiate connections depending on the results
+				return;
+		
 			} else {
 				// forward the pong using the routing table
 				// If not present in the routing table, it's a stale pong. Ignore
@@ -109,6 +122,14 @@ public class SimpellaHandleMsg {
 								pongFwdSocket.getOutputStream());
 						pongToClient.write(header, 0, 23);
 						pongToClient.write(pongPayLoad);
+						//set Simpella connection and global bit and pack for info command
+						stats = SimpellaConnectionStatus.getBySocket(pongFwdSocket);
+						if (null != stats) {
+							stats.setSentBytes(pongPayLoad.length+header.length);
+							stats.setSentPacks();
+							SimpellaConnectionStatus.setTotalBytesSent(pongPayLoad.length+header.length);
+							SimpellaConnectionStatus.setTotalPacketsSent();
+						}
 					} catch (IOException e) {
 						System.out
 								.println("Socket Connection Error during pong write");
@@ -122,6 +143,7 @@ public class SimpellaHandleMsg {
 		 * Handle QUERY message 
 		 */
 		else if (header[16] == (byte) 0x80) {
+			System.out.println("Query-message");
 			byte[] tmp = new byte[4];
 			tmp[0] = header[19];
 			tmp[1] = header[20];
@@ -138,8 +160,9 @@ public class SimpellaHandleMsg {
 			// consume payLoadLen amount of data irrespective of it belongs to you or not!
 			byte[] queryPayLoad = new byte[payLoadLen];
 			int len = inFromClient.read(queryPayLoad, 0, payLoadLen);
-			System.out.println("Query-message");
+					
 			String queryid = SimpellaRoutingTables.guidToString(header);
+			
 			if (SimpellaRoutingTables.QueryTable.containsKey(queryid) || // seen query before
 					SimpellaRoutingTables.generatedQueryList.contains(queryid)) { // my own query
 				System.out.println("Query message seen before or self query, ignoring");
@@ -147,6 +170,20 @@ public class SimpellaHandleMsg {
 				return;
 			} else {
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
+				SimpellaConnectionStatus.setQueriesRecvd();
+				//set the count of total unique IDs
+				int uniqueId =  SimpellaConnectionStatus.getTotalUniqueGUIds();
+				SimpellaConnectionStatus.setTotalUniqueGUIds(++uniqueId);
+				
+				//set received bytes and packs size
+				stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
+				if	(null != stats) {
+					stats.setRecvdBytes(len);
+					stats.setRecvdPacks();
+					SimpellaConnectionStatus.setTotalBytesRecvd(len);
+					SimpellaConnectionStatus.setTotalPacketsRecvd();
+				}
+				
 				ByteArrayInputStream msg = new ByteArrayInputStream(
 						queryPayLoad);
 				byte[] querySpeed = new byte[2];
@@ -165,6 +202,7 @@ public class SimpellaHandleMsg {
 				 * TODO make it more elegant
 				 */
 				replyWithQueryHit(sessionSocket, searchString, header);
+
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
@@ -188,12 +226,22 @@ public class SimpellaHandleMsg {
 			
 			byte[] queryHitPayLoad = new byte[payLoadLen];
 			int len = inFromClient.read(queryHitPayLoad, 0, payLoadLen);
+
 			
 			if(Simpella.debug) {
 			System.out.println("Query-hit message received with payload len = "
 					+ payLoadLen + "bytes read = " + len);
 			}
 
+			//set received bytes and packs size
+			stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
+			if (null != stats) {
+				stats.setRecvdBytes(len);
+				stats.setRecvdPacks();
+				SimpellaConnectionStatus.setTotalBytesRecvd(len);
+				SimpellaConnectionStatus.setTotalPacketsRecvd();
+			}
+			
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
 				
@@ -284,6 +332,15 @@ public class SimpellaHandleMsg {
 							queryHitFwdSocket.getOutputStream());
 					queryHitToClient.write(header, 0, 23);
 					queryHitToClient.write(queryHitPayLoad);
+					//set global and Simpella Connection bit and pack for info command
+					stats = SimpellaConnectionStatus.getBySocket(queryHitFwdSocket);
+					if(null!=stats){
+						stats.setSentBytes(queryHitPayLoad.length+header.length);
+						stats.setSentPacks();
+						SimpellaConnectionStatus.setTotalBytesSent(queryHitPayLoad.length+header.length);
+						SimpellaConnectionStatus.setTotalPacketsSent();
+					}
+					
 				} catch (IOException e) {
 					System.out
 							.println("Socket Connection Error during pong write");
@@ -313,6 +370,14 @@ public class SimpellaHandleMsg {
 		try {
 			outToClient = new DataOutputStream(clientSocket.getOutputStream());
 			outToClient.write(pongPacket);
+			//set bit and pack for info command
+			stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+			if(null!=stats){
+			stats.setSentBytes(pongPacket.length);
+			stats.setSentPacks();
+			SimpellaConnectionStatus.setTotalBytesSent(pongPacket.length);
+			SimpellaConnectionStatus.setTotalPacketsSent();		
+			}
 		} catch (IOException e) {
 			System.out.println("Socket Connection Error during pong write");
 		}
@@ -350,9 +415,17 @@ public class SimpellaHandleMsg {
 					DataOutputStream outToServents = new DataOutputStream(
 							clientSocket.getOutputStream());
 					outToServents.write(pingMsg);
+				//set bit and pack for info command
+				stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+				if(null!=stats){
+				stats.setSentBytes(pingMsg.length);
+				stats.setSentPacks();
+				SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
+				SimpellaConnectionStatus.setTotalPacketsSent();		
 				}
 			}
 		}
+	}		
 		for (int j = 0; j < 3; j++) {
 			clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
 
@@ -373,11 +446,18 @@ public class SimpellaHandleMsg {
 					DataOutputStream outToServents = new DataOutputStream(
 							clientSocket.getOutputStream());
 					outToServents.write(pingMsg);
+				//set bit and pack for info command
+				stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+				if(null!=stats){
+					stats.setSentBytes(pingMsg.length);
+					stats.setSentPacks();
+					SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
+					SimpellaConnectionStatus.setTotalPacketsSent();		
 				}
 			}
 		}
 	}
-
+}
 	/**
 	 * Broadcast query.
 	 * 
@@ -417,7 +497,14 @@ public class SimpellaHandleMsg {
 							clientSocket.getOutputStream());
 					outToServents.write(header);
 					outToServents.write(queryPayLoad);
-					
+					//set bit and pack for info command
+					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+					if(null!=stats){
+						stats.setSentBytes(queryPayLoad.length+header.length);
+						stats.setSentPacks();
+						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length+header.length);
+						SimpellaConnectionStatus.setTotalPacketsSent();
+					}
 				}
 			}
 		}
@@ -442,7 +529,14 @@ public class SimpellaHandleMsg {
 							clientSocket.getOutputStream());
 					outToServents.write(header);
 					outToServents.write(queryPayLoad);
-					
+					//set bit and pack for info command
+					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+					if(null!=stats){
+						stats.setSentBytes(queryPayLoad.length+header.length);
+						stats.setSentPacks();
+						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length+header.length);
+						SimpellaConnectionStatus.setTotalPacketsSent();
+					}
 				}
 			}
 		}
@@ -477,6 +571,8 @@ public class SimpellaHandleMsg {
 		ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
 
 		if (!searchResults.isEmpty()) {
+			SimpellaConnectionStatus.setResponsesSent();
+			// TODO Reply with a query-hit
 			byte[] tmp = new byte[4];
 			int offset = 0;
 			// write no. of files to 1st byte
@@ -548,6 +644,15 @@ public class SimpellaHandleMsg {
 			outToClient.write(queryHitHeaderBytes, 0, 23);
 			// write payload
 			outToClient.write(payLoadArray, 0, offset);
+
+			//set bit and pack for info command
+			stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
+			if(null!=stats){
+				stats.setSentBytes(payLoadArray.length+queryHitHeaderBytes.length);
+				stats.setSentPacks();
+				SimpellaConnectionStatus.setTotalBytesSent(payLoadArray.length+queryHitHeaderBytes.length);
+				SimpellaConnectionStatus.setTotalPacketsSent();
+			}
 		}
 	}
 	
@@ -565,6 +670,14 @@ public class SimpellaHandleMsg {
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
 		outToServer.write(pingH.getHeader());
+		//set bit and pack for info command
+		stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+		if(null!=stats){
+			stats.setSentBytes(pingH.getHeader().length);
+			stats.setSentPacks();
+			SimpellaConnectionStatus.setTotalBytesSent(pingH.getHeader().length);
+			SimpellaConnectionStatus.setTotalPacketsSent();
+		}
 		return;
 	}
 

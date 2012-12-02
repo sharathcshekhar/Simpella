@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 public class SimpellaClient {
+	SimpellaStats simpellaStats;
 	int connectionPort = 0;
 	String connectionIP = "";
 	//TODO for testing purpose moved socket out of connect()
@@ -32,6 +33,9 @@ public class SimpellaClient {
 			return 1;
 		}
 		clientSocket = new Socket(connectionIP, connectionPort);
+		//add if unique ip to global list
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP);
+		
 		String connect_cmd = "SIMPELLA CONNECT/0.6\r\n";
 		DataOutputStream outToServer = new DataOutputStream(
 				clientSocket.getOutputStream());
@@ -92,7 +96,15 @@ public class SimpellaClient {
 				System.out.println("msg received from server " + 
 						sessionSocket.getInetAddress().getHostAddress() + " At port " + 
 						sessionSocket.getPort());
-
+				//set packet and bit for info command
+				simpellaStats = SimpellaConnectionStatus.getBySocket(sessionSocket);
+				if(null!=simpellaStats){
+					simpellaStats.setRecvdBytes(len);
+					simpellaStats.setRecvdPacks();
+					SimpellaConnectionStatus.setTotalBytesRecvd(len);
+					SimpellaConnectionStatus.setTotalPacketsRecvd();
+				}
+				
 				if(len == -1) {
 					System.out.println("Client has close the socket, exit");
 					break;

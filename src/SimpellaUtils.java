@@ -1,4 +1,5 @@
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 
@@ -45,4 +46,16 @@ public class SimpellaUtils {
 
      return result;
    }
+   
+   	public static String memFormat(long mem) {
+	    if(mem <= 0) return "0";
+	    else if(mem<1024){
+	    	return Long.toString(mem);
+	    }
+	    else{	
+	    final String[] units = new String[] {"B", "K", "M", "G"};
+	    int digits = (int) (Math.log10(mem)/Math.log10(1024));
+	    return new DecimalFormat("#,##0.##").format(mem/Math.pow(1024, digits)) + "" + units[digits];
+	    }
+	}
 }
