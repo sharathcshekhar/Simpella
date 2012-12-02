@@ -147,23 +147,31 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("clear")) {
 				System.out.println("clear command");
-				SimpellaConnectionStatus.clearQueryResultsTable();
-							
+				if(cmd_args.length == 2) {
+					int clear_index = Integer.parseInt(cmd_args[1]);
+					SimpellaConnectionStatus.clearQueryResultsTable(clear_index - 1);
+				} else {
+					SimpellaConnectionStatus.clearQueryResultsTable();
+				}			
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
 				SimpellaFileClient fileDw = new SimpellaFileClient();
 				fileDw.downloadFile(Integer.parseInt(cmd_args[1]));
 			
 			} else if (cmd_args[0].equals("share")) {
-				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
-				System.out.println("sharing directory " + sharedDirectory);
-				File share = new File(sharedDirectory);
-				if(! share.exists()) {
-					System.out.println("Invalid file name");
-					continue;
+				if(cmd_args.length > 1 && cmd_args[1].equals("-i")) {
+					System.out.println("sharing directory " + SimpellaFileShareDB.sharedDirectory);
+				} else {
+					String sharedDirectory = usrInput.substring(usrInput
+							.indexOf(" ") + 1);
+					System.out.println("sharing directory " + sharedDirectory);
+					File share = new File(sharedDirectory);
+					if (!share.exists()) {
+						System.out.println("Invalid file name");
+						continue;
+					}
+					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
 				}
-				SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
-				
 			} else if (cmd_args[0].equals("scan")) {
 				System.out.println("scanning " + SimpellaFileShareDB.sharedDirectory + " for files...");
 				SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
