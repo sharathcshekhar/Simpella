@@ -15,7 +15,8 @@ import java.util.Formatter;
  */
 public class Simpella {
 	
-	public static final boolean debug = true;
+	public static boolean debug = true;
+	public static final String LOCAL_IP = SimpellaIPUtils.getLocalIPAddress().getHostAddress();
 	/*
 	 * Global Flags
 	 * FIND_flag - is set when find command is running,
@@ -80,7 +81,8 @@ public class Simpella {
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
-
+		System.out.println("Local IP : " + LOCAL_IP + "\nSimpella Net Port: " + netPort + "\nDownloading Port: " +
+				fileDwPort + "\nsimpella version 0.6 (c) University at Buffalo, 2012");
 		while (true) {
 			System.out.print("Simpella> ");
 			String usrInput = null;
@@ -150,14 +152,8 @@ public class Simpella {
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
 				SimpellaFileClient fileDw = new SimpellaFileClient();
-				/*// test code
-				fileDw.setFileIndex(1);
-				fileDw.setFileName("test.mp3");
-				fileDw.setServerIP("localhost");
-				fileDw.setServerPort(8080);*/
 				fileDw.downloadFile(Integer.parseInt(cmd_args[1]));
-				//TODO implement download
-				
+			
 			} else if (cmd_args[0].equals("share")) {
 				String sharedDirectory = usrInput.substring(usrInput.indexOf(" ") + 1);
 				System.out.println("sharing directory " + sharedDirectory);
@@ -169,23 +165,31 @@ public class Simpella {
 				SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
 				
 			} else if (cmd_args[0].equals("scan")) {
-				System.out.println("scan command");
+				System.out.println("scanning " + SimpellaFileShareDB.sharedDirectory + " for files...");
 				SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 				fileDb.scanSharedDirectory();
-				System.out.println("No of files = " + fileDb.getNoOfFiles() 
-						+ " Total Size = " + fileDb.getSizeOfFiles() + " bytes");
+				System.out.println("Scanned " + fileDb.getNoOfFiles() + " files and = " 
+						+ fileDb.getSizeOfFiles() + " bytes");
 				
 			} else if (cmd_args[0].equals("monitor")) {
-				System.out.println("monitor command");
+				System.out.println("MONITORING SIMPELLA NETWORK\n" + "Press enter to continue\n" 
+						+ "----------------------------");
 				setMONITORFlag();
 				cmdFromUser.readLine();
 				clearMONITORFlag();
-				
 				
 			} else if (cmd_args[0].equals("quit")) {
 				System.out.println("quit command");
 				//TODO close all sockets
 				System.exit(0);
+			} else if (cmd_args[0].equals("debug")) {
+				if(debug == true) {
+					System.out.println("Switching off debug mode");
+					debug = false;
+				} else {
+					System.out.println("Setting debug mode");
+					debug = true;
+				}
 			} else {
 				System.out.println("Invalid Command!");
 			}

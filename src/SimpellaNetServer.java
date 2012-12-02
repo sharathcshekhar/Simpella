@@ -70,7 +70,9 @@ public class SimpellaNetServer {
 		}
 		;
 		Socket clientSocket = new Socket();
-		System.out.println("Starting TCP Server at port " + tcpServerPort);
+		if(Simpella.debug){
+			System.out.println("Starting TCP Server at port " + tcpServerPort);
+		}
 		ServerSocket SimpellaTCP = null;
 		try {// create server socket
 			SimpellaTCP = new ServerSocket(tcpServerPort);

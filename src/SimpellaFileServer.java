@@ -65,7 +65,9 @@ public class SimpellaFileServer {
 		}
 		;
 		Socket clientSocket = new Socket();
-		System.out.println("Starting File Server at port " + fileServerPort);
+		if(Simpella.debug) {
+			System.out.println("Starting File Server at port " + fileServerPort);
+		}
 		ServerSocket fileSrvSocket = null;
 		try {// create server socket
 			fileSrvSocket = new ServerSocket(fileServerPort);

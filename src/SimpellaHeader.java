@@ -1,5 +1,4 @@
 import java.net.Socket;
-import java.util.Hashtable;
 
 
 
@@ -188,70 +187,17 @@ public class SimpellaHeader {
 			header[i]=bytes[i-9];
 		}
 	}
-	
-
-	/**
-	 * Sets the numof files shared.
-	 *
-	 * @param numF the new numof files shared
-	 */
-	public void setNumofFilesShared(int numF){
-		byte[] numFiles = new byte[4];
-		numFiles = SimpellaUtils.toBytes(numF);
-		header[29]=numFiles[0];
-		header[30]=numFiles[1];
-		header[31]=numFiles[2];
-		header[32]=numFiles[3];
-	}
-	
-	/**
-	 * Gets the numof files shared.
-	 *
-	 * @return the numof files shared
-	 */
-	public int getNumofFilesShared(){
-		byte[] files = new byte[4];
-		files[0]=header[29];
-		files[1]=header[30];
-		files[2]=header[31];
-		files[3]=header[32];
-		int result = SimpellaUtils.byteArrayToInt(files);
-		return result;
-	}
-	
-	public void setKbsShared(int kbF){
-		byte[] numFiles = new byte[4];
-		numFiles = SimpellaUtils.toBytes(kbF);
-		header[33]=numFiles[0];
-		header[34]=numFiles[1];
-		header[35]=numFiles[2];
-		header[36]=numFiles[3];
-	}
-	
-	public int getKbsShared(){
-		byte[] files = new byte[4];
-		files[0]=header[33];
-		files[1]=header[34];
-		files[2]=header[35];
-		files[3]=header[36];
-		int result = SimpellaUtils.byteArrayToInt(files);
-		return result;
-	}
-	
+		
 	/**
 	 * Sets the pong payload.
 	 *
 	 * @param clientSocket the client socket
 	 * @param payload the payload
 	 */
-	public void setPongPayload(Socket clientSocket,byte[] payload){
-	//	ByteBuffer b = ByteBuffer.allocate(4);
-	//	b.order(ByteOrder.BIG_ENDIAN);
-	//	b.putInt(clientSocket.getLocalPort());
+	public void setPongPayload(Socket clientSocket, byte[] payload){
+		
 		byte[] payload_port = SimpellaUtils.toBytes(SimpellaConnectionStatus.simpellaNetPort);
 		
-	//TODO Endianness validation
-	//	payload_port = b.array();
 		payload[24] = payload_port[3];
 		payload[23] = payload_port[2];
 		System.out.println("Setting port no. to  0:1 " + 
@@ -282,35 +228,18 @@ public class SimpellaHeader {
 		payload[36] = fileSize[3];
 		
 	}
-	
-	/**
-	 * Sets the query payload.
-	 *
-	 * @param payload the payload
-	 * @param speed the speed
-	 * @param search the search
-	 */
-	public void setQueryPayload(byte[] payload, byte[] speed, String search){
-		//TODO size and payload validation
-		payload[24]=speed[0];
-		payload[23]=speed[1];
-		//payload[25]=search.getBytes();
-	}
-	//TODO
-	public void setQueryHitPayload(Hashtable<Integer, String> searchResults) {
-		//byte[] payload;
-		/*
-		 * payload[0] = no. of files matched
-		 * payload[1-2] = port
-		 * payload[3-6] = ip
-		 * payload[7 - 10] = speed = 10,000
-		 * FOR ALL files
-		 * payload[11 - 14] = file index
-		 * payload[15 - 18] = file_size
-		 * payload[18 - ] = file name 
-		 * payload[last 16 byte] = unique ID of the servent
-		 */
+	//System.arraycopy(src, src pos, dest, dest pos, len)
+	public static byte[] getSimpellaPacket(byte[] header, byte[] payLoad) {
+		byte[] packet = new byte[header.length + payLoad.length];
+		System.arraycopy(header, 0, packet, 0, header.length);
+		System.arraycopy(payLoad, 0, packet, header.length, payLoad.length);
+		return packet;
 	}
 	
-
+	public byte[] getSimpellaPacket(byte[] payLoad) {
+		byte[] packet = new byte[header.length + payLoad.length];
+		System.arraycopy(header, 0, packet, 0, header.length);
+		System.arraycopy(payLoad, 0, packet, header.length, payLoad.length);
+		return packet;
+	}
 }

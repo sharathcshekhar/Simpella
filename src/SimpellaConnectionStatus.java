@@ -64,6 +64,12 @@ public class SimpellaConnectionStatus {
 			queryResults.clear();
 		}
 	}
+	
+	public static void clearQueryResultsTable(int index) {
+		if(!queryResults.isEmpty()) {
+			queryResults.remove(index);
+		}
+	}
 
 	public static int getLocalFilesShared() {
 		return localFilesShared;
@@ -219,8 +225,10 @@ public class SimpellaConnectionStatus {
 				incomingConnectionList[i].remotePort = 0;
 				incomingConnectionList[i].sessionSocket = null;
 				incomingConnectionCount--;
-				System.out
+				if(Simpella.debug) {
+					System.out
 						.println("Added connection to outgoingConnectionList");
+				}
 				return;
 			}
 		}
@@ -251,8 +259,10 @@ public class SimpellaConnectionStatus {
 					outgoingConnectionList[i].remotePort = clientSocket
 							.getPort();
 					outgoingConnectionCount++;
-					System.out
+					if(Simpella.debug) {
+						System.out
 							.println("Added connection to outgoingConnectionList");
+					}
 					return;
 				}
 			}
