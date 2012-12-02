@@ -16,7 +16,8 @@ import java.net.SocketException;
 public class SimpellaNetServer {
 	int port;
 	boolean status;
-
+	SimpellaStats stats;
+	
 	class TCPServer implements Runnable {
 		private int portNumber;
 
@@ -83,8 +84,9 @@ public class SimpellaNetServer {
 		}
 		while (status) {
 			try {
-				clientSocket = SimpellaTCP.accept();
-
+				clientSocket = SimpellaTCP.accept();	
+				//add if unique ip to global list
+				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(clientSocket.getInetAddress().getHostAddress());
 			} catch (IOException e) {
 				System.out.println("Accept failed at " + tcpServerPort);
 				continue;
@@ -147,6 +149,14 @@ public class SimpellaNetServer {
 		while (true) {
 			byte[] header = new byte[23];
 			len = inFromClient.read(header, 0, 23);
+			//set bytes and packs read
+			stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+			if(null!=stats){
+				stats.setRecvdBytes(len);
+				stats.setRecvdPacks();
+				SimpellaConnectionStatus.setTotalBytesRecvd(len);
+				SimpellaConnectionStatus.setTotalPacketsRecvd();
+			}
 			if (len == -1) {
 				System.out.println("Client has close the socket, exit");
 				break;

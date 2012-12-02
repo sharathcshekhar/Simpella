@@ -1,4 +1,5 @@
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class SimpellaConnectionStatus {
@@ -6,14 +7,25 @@ public class SimpellaConnectionStatus {
 	public static int simpellaFileDownloadPort = 0;
 	public static int incomingConnectionCount = 0;
 	public static int outgoingConnectionCount = 0;
-	public static IncomingConnectionTable[] incomingConnectionList = 
-			new IncomingConnectionTable[3];
-	public static OutgoingConnectionTable[] outgoingConnectionList = 
-			new OutgoingConnectionTable[3];
+	public static SimpellaStats[] incomingConnectionList = 
+			new SimpellaStats[3];
+	public static SimpellaStats[] outgoingConnectionList = 
+			new SimpellaStats[3];
+	public static ArrayList<String> globalIpTable = new ArrayList<String>();
 	
-//	public static Hashtable<Integer, SimpellaQueryResults> queryResults = 
-//	new Hashtable<Integer, SimpellaQueryResults>();
-//	static int nextInsPosQueryRes = 0;
+	private static int totalFiles = 0;
+	private static int totalFilesSize = 0;
+	private static int localFilesShared = 0;
+	private static int localFilesSharedSize = 0;
+	private static int totalHosts = 0;
+	private static int totalUniqueGUIds = 0;
+	private static int totalPacketsSent = 0;
+	private static int totalPacketsRecvd = 0;
+	private static int totalBytesSent = 0;
+	private static int totalBytesRecvd = 0;
+	private static int queriesRecvd = 0;
+	private static int responsesSent = 0;
+
 
 	/*
 	 *  noOfQueryhitsRecived received per find command
@@ -52,13 +64,105 @@ public class SimpellaConnectionStatus {
 			queryResults.clear();
 		}
 	}
+
+	public static int getLocalFilesShared() {
+		return localFilesShared;
+	}
+
+	public static void setLocalFilesShared(int localFilesShared) {
+		SimpellaConnectionStatus.localFilesShared = localFilesShared;
+	}
+
+	public static int getLocalFilesSharedSize() {
+		return localFilesSharedSize;
+	}
+
+	public static void setLocalFilesSharedSize(int localFilesSharedSize) {
+		SimpellaConnectionStatus.localFilesSharedSize = localFilesSharedSize;
+	}
+
+	public static int getTotalFiles() {
+		return totalFiles;
+	}
+
+	public static void setTotalFiles(int totalFiles) {
+		SimpellaConnectionStatus.totalFiles= totalFiles;
+	}
+
+	public static int getTotalFilesSize() {
+		return totalFilesSize;
+	}
+
+	public static void setTotalFilesSize(int totalFilesSize) {
+		SimpellaConnectionStatus.totalFilesSize= totalFilesSize;
+	}
+
+	public static int getQueriesRecvd() {
+		return queriesRecvd;
+	}
+
+	public static void setQueriesRecvd() {
+		SimpellaConnectionStatus.queriesRecvd++;
+	}
+
+	public static int getResponsesSent() {
+		return responsesSent;
+	}
+
+	public static void setResponsesSent() {
+		SimpellaConnectionStatus.responsesSent++;
+	}
+
+	public static int getTotalBytesSent() {
+		return totalBytesSent;
+	}
+
+	public static void setTotalBytesSent(int totalBytesSent) {
+		SimpellaConnectionStatus.totalBytesSent+= totalBytesSent;
+	}
+
+	public static int getTotalBytesRecvd() {
+		return totalBytesRecvd;
+	}
+
+	public static void setTotalBytesRecvd(int totalBytesRecvd) {
+		SimpellaConnectionStatus.totalBytesRecvd+= totalBytesRecvd;
+	}
 	
+	public static int getTotalPacketsSent() {
+		return totalPacketsSent;
+	}
+
+	public static void setTotalPacketsSent() {
+		SimpellaConnectionStatus.totalPacketsSent++;
+	}
+
+	public static int getTotalPacketsRecvd() {
+		return totalPacketsRecvd;
+	}
+
+	public static void setTotalPacketsRecvd() {
+		SimpellaConnectionStatus.totalPacketsRecvd++;
+	}
+	
+	public static int getTotalUniqueGUIds() {
+		return totalUniqueGUIds;
+	}
+
+	public static void setTotalUniqueGUIds(int totalUniqueGUIds) {
+		SimpellaConnectionStatus.totalUniqueGUIds = totalUniqueGUIds;
+	}
+
+	public static int getTotalHosts() {
+		return totalHosts;
+	}
+
 	public static void ConnectionStatusInit() {
 		for (int i = 0; i < 3; i++) {
-			incomingConnectionList[i] = new IncomingConnectionTable();
+			incomingConnectionList[i] = new SimpellaStats();
 		}
 		for (int j = 0; j < 3; j++) {
-			outgoingConnectionList[j] = new OutgoingConnectionTable();
+			outgoingConnectionList[j] = new SimpellaStats();
 		}
 		incomingConnectionCount = 0;
 		outgoingConnectionCount = 0;
@@ -66,6 +170,16 @@ public class SimpellaConnectionStatus {
 		simpellaFileDownloadPort = 5635; //default port
 		}
 
+	public static void checkAndAddIpToGlobalTable(String ip){
+		for(String ip1:globalIpTable){
+			if(ip.equals(ip1)){
+				return;
+			}
+		}
+		globalIpTable.add(ip);
+		totalHosts++;
+	}
+	
 	// TODO check for only IP. Checking both IP and port # for testing purpose
 	// only
 	public static boolean isInConnectionPresent(String inComingIP, int port) {
@@ -157,35 +271,21 @@ public class SimpellaConnectionStatus {
 		}
 
 	}
-
-}
-
-class IncomingConnectionTable {
-	public IncomingConnectionTable() {
-		super();
-		this.connectionId = 0;
-		this.remoteIP = "";
-		this.remotePort = 0;
-		this.sessionSocket = null;
+	
+	public static SimpellaStats getBySocket(Socket clientSocket){
+		for(int i=0;i<3;i++){
+			if(outgoingConnectionList[i].remoteIP.equals(clientSocket.getInetAddress().getHostAddress()) &&
+					outgoingConnectionList[i].remotePort==clientSocket.getPort()){
+				return outgoingConnectionList[i];
+			}
+		}
+		
+		for(int i=0;i<3;i++){
+			if(incomingConnectionList[i].remoteIP.equals(clientSocket.getInetAddress().getHostAddress()) &&
+					incomingConnectionList[i].remotePort==clientSocket.getPort()){
+				return incomingConnectionList[i];
+			}
+		}
+		return null;
 	}
-
-	int connectionId; // not used for now
-	String remoteIP;
-	int remotePort;
-	Socket sessionSocket;
-}
-
-class OutgoingConnectionTable {
-	public OutgoingConnectionTable() {
-		super();
-		this.connectionId = 0; // not used for now
-		this.remoteIP = "";
-		this.remotePort = 0;
-		this.sessionSocket = null;
-	}
-
-	int connectionId;
-	String remoteIP;
-	int remotePort;
-	Socket sessionSocket;
 }

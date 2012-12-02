@@ -3,12 +3,12 @@ import java.util.Hashtable;
 
 
 
-
-public class SimpellaHeader {
 // TODO: Auto-generated Javadoc
 /**
  * The Class Header.
  */
+public class SimpellaHeader {
+	
 	/** The header. */
 	byte[] header;
 	
@@ -198,10 +198,10 @@ public class SimpellaHeader {
 	public void setNumofFilesShared(int numF){
 		byte[] numFiles = new byte[4];
 		numFiles = SimpellaUtils.toBytes(numF);
-		header[32]=numFiles[0];
-		header[31]=numFiles[1];
-		header[30]=numFiles[2];
-		header[29]=numFiles[3];
+		header[29]=numFiles[0];
+		header[30]=numFiles[1];
+		header[31]=numFiles[2];
+		header[32]=numFiles[3];
 	}
 	
 	/**
@@ -211,10 +211,10 @@ public class SimpellaHeader {
 	 */
 	public int getNumofFilesShared(){
 		byte[] files = new byte[4];
-		files[0]=header[32];
-		files[1]=header[31];
-		files[2]=header[30];
-		files[3]=header[29];
+		files[0]=header[29];
+		files[1]=header[30];
+		files[2]=header[31];
+		files[3]=header[32];
 		int result = SimpellaUtils.byteArrayToInt(files);
 		return result;
 	}
@@ -222,18 +222,18 @@ public class SimpellaHeader {
 	public void setKbsShared(int kbF){
 		byte[] numFiles = new byte[4];
 		numFiles = SimpellaUtils.toBytes(kbF);
-		header[36]=numFiles[0];
-		header[35]=numFiles[1];
-		header[34]=numFiles[2];
-		header[33]=numFiles[3];
+		header[33]=numFiles[0];
+		header[34]=numFiles[1];
+		header[35]=numFiles[2];
+		header[36]=numFiles[3];
 	}
 	
 	public int getKbsShared(){
 		byte[] files = new byte[4];
-		files[0]=header[36];
-		files[1]=header[35];
-		files[2]=header[34];
-		files[3]=header[33];
+		files[0]=header[33];
+		files[1]=header[34];
+		files[2]=header[35];
+		files[3]=header[36];
 		int result = SimpellaUtils.byteArrayToInt(files);
 		return result;
 	}
