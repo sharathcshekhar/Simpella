@@ -53,17 +53,16 @@ private SimpellaStats stats;
 			pong_tmp_buf[2] = header[21];
 			pong_tmp_buf[3] = header[22];
 			int payLoadLen = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
-			System.out.println("Pong received with payload " + payLoadLen);
 			
 			byte[] pongPayLoad = new byte[14];
 			int len = inFromClient.read(pongPayLoad, 0, 14);
-
-			
 			if (len != payLoadLen) {
 				System.out.println("Something has gone wrong!");
 				return;
 			}
-			System.out.println(len + " bytes of pong payload read");
+			if(Simpella.debug) {
+				System.out.println(len + " bytes of pong payload read, payload length = " + payLoadLen);
+			}
 			if (SimpellaRoutingTables.generatedPingList.contains(guid)) {
 				System.out.println("Pong is for me!");
 				ByteArrayInputStream msg = new ByteArrayInputStream(
@@ -92,8 +91,7 @@ private SimpellaStats stats;
 							+ " size = " + size_shared);
 				}			
 				//add if unique ip to global list
-				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip,port_number);
-
+				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip, port_number);
 				//set shared files data
 				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
 				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
@@ -120,8 +118,11 @@ private SimpellaStats stats;
 					try {
 						pongToClient = new DataOutputStream(
 								pongFwdSocket.getOutputStream());
-						pongToClient.write(header, 0, 23);
-						pongToClient.write(pongPayLoad);
+						byte[] pongPacket = SimpellaHeader.getSimpellaPacket(header, pongPayLoad);
+						//pongToClient.write(header, 0, 23);
+						//pongToClient.write(pongPayLoad);
+						pongToClient.write(pongPacket);
+						
 						//set Simpella connection and global bit and pack for info command
 						stats = SimpellaConnectionStatus.getBySocket(pongFwdSocket);
 						if (null != stats) {
@@ -196,7 +197,9 @@ private SimpellaStats stats;
 					return;
 				}
 				String searchString = new String(rawQueryString);
-				System.out.println("Search String is " + searchString);
+				if (Simpella.debug || Simpella.is_MONITORActive()) {
+					System.out.println("Search: " + searchString);
+				}
 				/*
 				 * Crude way of setting GUID 
 				 * TODO make it more elegant
@@ -330,8 +333,10 @@ private SimpellaStats stats;
 				try {
 					queryHitToClient = new DataOutputStream(
 							queryHitFwdSocket.getOutputStream());
-					queryHitToClient.write(header, 0, 23);
-					queryHitToClient.write(queryHitPayLoad);
+					byte[] queryHPacket = SimpellaHeader.getSimpellaPacket(header, queryHitPayLoad);
+				//	queryHitToClient.write(header, 0, 23);
+				//	queryHitToClient.write(queryHitPayLoad);
+					queryHitToClient.write(queryHPacket);
 					//set global and Simpella Connection bit and pack for info command
 					stats = SimpellaConnectionStatus.getBySocket(queryHitFwdSocket);
 					if(null!=stats){
@@ -473,15 +478,17 @@ private SimpellaStats stats;
 			Socket sender) throws Exception {
 		Socket clientSocket = null;
 		String clientIP = "";
-		
-		System.out.println("In broadcast query with packet Length = " + queryPayLoad.length);
+		byte[] queryPacket = SimpellaHeader.getSimpellaPacket(header, queryPayLoad);
 		if(Simpella.debug) {
+			System.out.println("In broadcast query with packet Length = " + queryPayLoad.length);
 			for(int j = 0; j < queryPayLoad.length; j++) {
 				System.out.println("broadcast: Query Payload["+j+"] = " + queryPayLoad[j]);
 			}
 		}
 		for (int i = 0; i < 3; i++) {
-			System.out.println("In broadcast incoming " + i);
+			if(Simpella.debug) {
+				System.out.println("In broadcast incoming " + i);
+			}
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
 			clientIP = SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
 			int clientPort = SimpellaConnectionStatus.incomingConnectionList[i].remotePort;
@@ -490,26 +497,32 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
-					System.out.println("broadcast incoming " + clientIP
+					if(Simpella.debug) {
+						System.out.println("broadcast incoming " + clientIP
 							+ " port = " + clientPort);
+					}	
 					/* send to everyone apart from this node */
 					DataOutputStream outToServents = new DataOutputStream(
 							clientSocket.getOutputStream());
-					outToServents.write(header);
-					outToServents.write(queryPayLoad);
+					
+					//outToServents.write(header);
+					//outToServents.write(queryPayLoad);
+					outToServents.write(queryPacket);
 					//set bit and pack for info command
 					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
 					if(null!=stats){
-						stats.setSentBytes(queryPayLoad.length+header.length);
+						stats.setSentBytes(queryPayLoad.length + header.length);
 						stats.setSentPacks();
-						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length+header.length);
+						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length + header.length);
 						SimpellaConnectionStatus.setTotalPacketsSent();
 					}
 				}
 			}
 		}
 		for (int j = 0; j < 3; j++) {
-			System.out.println("In broadcast outgoing " + j);
+			if(Simpella.debug) {
+				System.out.println("In broadcast outgoing " + j);
+			}
 			clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
 			clientIP = SimpellaConnectionStatus.outgoingConnectionList[j].remoteIP;
 			int clientPort = SimpellaConnectionStatus.outgoingConnectionList[j].remotePort;
@@ -518,17 +531,20 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
-
-					System.out.println("broadcast outgoing " + clientIP
-							+ " port = " + clientPort);
+					if(Simpella.debug) {
+						System.out.println("broadcast outgoing " + clientIP
+								+ " port = " + clientPort);
+					}
 					/*
 					 * send to everyone apart from this node If sender is null,
 					 * send it to all
 					 */
 					DataOutputStream outToServents = new DataOutputStream(
 							clientSocket.getOutputStream());
-					outToServents.write(header);
-					outToServents.write(queryPayLoad);
+					
+				//	outToServents.write(header);
+				//	outToServents.write(queryPayLoad);
+					outToServents.write(queryPacket);
 					//set bit and pack for info command
 					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
 					if(null!=stats){
@@ -640,11 +656,12 @@ private SimpellaStats stats;
 							+ payLoadArray[k]);
 				}
 			}
+			byte[] queryHPacket = SimpellaHeader.getSimpellaPacket(queryHitHeaderBytes, payLoadArray); 
 			// write header
-			outToClient.write(queryHitHeaderBytes, 0, 23);
+			// outToClient.write(queryHitHeaderBytes, 0, 23);
 			// write payload
-			outToClient.write(payLoadArray, 0, offset);
-
+			//  outToClient.write(payLoadArray, 0, offset);
+			outToClient.write(queryHPacket);
 			//set bit and pack for info command
 			stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
 			if(null!=stats){

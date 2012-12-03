@@ -11,7 +11,7 @@ public class SimpellaConnectionStatus {
 			new SimpellaStats[3];
 	public static SimpellaStats[] outgoingConnectionList = 
 			new SimpellaStats[3];
-	public static Hashtable<String,Integer> globalIpTable = new Hashtable<String,Integer>();
+	//public static Hashtable<String,Integer> globalIpTable = new Hashtable<String,Integer>();
 	
 	private static int totalFiles = 0;
 	private static int totalFilesSize = 0;
@@ -25,7 +25,7 @@ public class SimpellaConnectionStatus {
 	private static int totalBytesRecvd = 0;
 	private static int queriesRecvd = 0;
 	private static int responsesSent = 0;
-
+	private static Vector<ipConfig> globalIpTable = new Vector<ipConfig>(); 
 
 	/*
 	 *  noOfQueryhitsRecived received per find command
@@ -62,6 +62,12 @@ public class SimpellaConnectionStatus {
 	public static void clearQueryResultsTable() {
 		if(!queryResults.isEmpty()) {
 			queryResults.clear();
+		}
+	}
+	
+	public static void clearQueryResultsTable(int index) {
+		if(!queryResults.isEmpty()) {
+			queryResults.remove(index);
 		}
 	}
 
@@ -154,7 +160,7 @@ public class SimpellaConnectionStatus {
 	}
 
 	public static int getTotalHosts() {
-		return totalHosts;
+		return globalIpTable.size();
 	}
 
 	public static void ConnectionStatusInit() {
@@ -171,6 +177,20 @@ public class SimpellaConnectionStatus {
 		}
 
 	public static void checkAndAddIpToGlobalTable(String ip, int port){
+		ipConfig Ipcon = new ipConfig();
+		Ipcon.setIpAddress(ip);
+		Ipcon.setPort(port);
+		if(globalIpTable.isEmpty()){
+			globalIpTable.add(Ipcon);
+			return;
+		}
+		for(int i=0;i<globalIpTable.size();i++){
+			if(globalIpTable.get(i).getIpAddress().equals(ip) && globalIpTable.get(i).getPort()==port){
+				return;
+			}
+		}
+		globalIpTable.add(Ipcon);
+		/*
 		if(!globalIpTable.containsKey(ip))
 		{
 			globalIpTable.put(ip, Integer.valueOf(port));
@@ -180,7 +200,7 @@ public class SimpellaConnectionStatus {
 			globalIpTable.put(ip, Integer.valueOf(port));
 			totalHosts++;	
 		}
-	}
+	*/}
 	
 	// TODO check for only IP. Checking both IP and port # for testing purpose
 	// only
@@ -221,8 +241,10 @@ public class SimpellaConnectionStatus {
 				incomingConnectionList[i].remotePort = 0;
 				incomingConnectionList[i].sessionSocket = null;
 				incomingConnectionCount--;
-				System.out
+				if(Simpella.debug) {
+					System.out
 						.println("Added connection to outgoingConnectionList");
+				}
 				return;
 			}
 		}
@@ -253,8 +275,10 @@ public class SimpellaConnectionStatus {
 					outgoingConnectionList[i].remotePort = clientSocket
 							.getPort();
 					outgoingConnectionCount++;
-					System.out
+					if(Simpella.debug) {
+						System.out
 							.println("Added connection to outgoingConnectionList");
+					}
 					return;
 				}
 			}
@@ -290,4 +314,21 @@ public class SimpellaConnectionStatus {
 		}
 		return null;
 	}
+}
+
+class ipConfig{
+public String getIpAddress() {
+		return ipAddress;
+	}
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+	}
+	public int getPort() {
+		return port;
+	}
+	public void setPort(int port) {
+		this.port = port;
+	}
+String ipAddress;
+int port;
 }

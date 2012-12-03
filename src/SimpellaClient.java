@@ -33,8 +33,6 @@ public class SimpellaClient {
 			return 1;
 		}
 		clientSocket = new Socket(connectionIP, connectionPort);
-		//add if unique ip to global list
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP,connectionPort);
 		
 		String connect_cmd = "SIMPELLA CONNECT/0.6\r\n";
 		DataOutputStream outToServer = new DataOutputStream(
@@ -48,7 +46,9 @@ public class SimpellaClient {
 			int len = inFromServer.read(replyToConnect);
 
 			String S = new String(replyToConnect);
-			System.out.println("Server replies with " + S);
+			if(Simpella.debug) {
+				System.out.println("Server replies with " + S);
+			}
 			if (S.substring(0, len).equals("SIMPELLA/0.6 200 OK")) {
 				SimpellaConnectionStatus.addOutgoingConnection(clientSocket);
 				System.out
@@ -60,7 +60,9 @@ public class SimpellaClient {
 				Thread clienListner_t = new Thread(new clientConnectionThread(
 						clientSocket));
 				clienListner_t.start();
-				System.out.println("spawned a listner in infnite loop!");
+				if(Simpella.debug) {
+					System.out.println("spawned a listner in infnite loop!");
+				}
 			} else if (S.startsWith("SIMPELLA/0.6 503")) {
 				System.out.println("Connection failed: " + S);
 				ret = 1;

@@ -187,69 +187,17 @@ public class SimpellaHeader {
 			header[i]=bytes[i-9];
 		}
 	}
-	
-
-	/**
-	 * Sets the numof files shared.
-	 *
-	 * @param numF the new numof files shared
-	 */
-	public void setNumofFilesShared(int numF){
-		byte[] numFiles = new byte[4];
-		numFiles = SimpellaUtils.toBytes(numF);
-		header[29]=numFiles[0];
-		header[30]=numFiles[1];
-		header[31]=numFiles[2];
-		header[32]=numFiles[3];
-	}
-	
-	/**
-	 * Gets the numof files shared.
-	 *
-	 * @return the numof files shared
-	 */
-	public int getNumofFilesShared(){
-		byte[] files = new byte[4];
-		files[0]=header[29];
-		files[1]=header[30];
-		files[2]=header[31];
-		files[3]=header[32];
-		int result = SimpellaUtils.byteArrayToInt(files);
-		return result;
-	}
-	
-	public void setKbsShared(int kbF){
-		byte[] numFiles = new byte[4];
-		numFiles = SimpellaUtils.toBytes(kbF);
-		header[33]=numFiles[0];
-		header[34]=numFiles[1];
-		header[35]=numFiles[2];
-		header[36]=numFiles[3];
-	}
-	
-	public int getKbsShared(){
-		byte[] files = new byte[4];
-		files[0]=header[33];
-		files[1]=header[34];
-		files[2]=header[35];
-		files[3]=header[36];
-		int result = SimpellaUtils.byteArrayToInt(files);
-		return result;
-	}
-	
+		
 	/**
 	 * Sets the pong payload.
 	 *
 	 * @param clientSocket the client socket
 	 * @param payload the payload
 	 */
-	public void setPongPayload(Socket clientSocket,byte[] payload){
-	//	ByteBuffer b = ByteBuffer.allocate(4);
-	//	b.order(ByteOrder.BIG_ENDIAN);
-	//	b.putInt(clientSocket.getLocalPort());
+	public void setPongPayload(Socket clientSocket, byte[] payload){
+		
 		byte[] payload_port = SimpellaUtils.toBytes(SimpellaConnectionStatus.simpellaNetPort);
 		
-	//	payload_port = b.array();
 		payload[24] = payload_port[3];
 		payload[23] = payload_port[2];
 		System.out.println("Setting port no. to  0:1 " + 
@@ -280,7 +228,14 @@ public class SimpellaHeader {
 		payload[36] = fileSize[3];
 		
 	}
-	
+
+	//System.arraycopy(src, src pos, dest, dest pos, len)
+	public static byte[] getSimpellaPacket(byte[] header, byte[] payLoad) {
+		byte[] packet = new byte[header.length + payLoad.length];
+		System.arraycopy(header, 0, packet, 0, header.length);
+		System.arraycopy(payLoad, 0, packet, header.length, payLoad.length);
+		return packet;
+	}	
 	/**
 	 * Sets the query payload.
 	 *
@@ -295,5 +250,10 @@ public class SimpellaHeader {
 		//payload[25]=search.getBytes();
 	}
 	
-
+	public byte[] getSimpellaPacket(byte[] payLoad) {
+		byte[] packet = new byte[header.length + payLoad.length];
+		System.arraycopy(header, 0, packet, 0, header.length);
+		System.arraycopy(payLoad, 0, packet, header.length, payLoad.length);
+		return packet;
+	}
 }

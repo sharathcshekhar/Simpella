@@ -10,7 +10,7 @@ import java.util.ArrayList;
  *
  */
 public class SimpellaFileShareDB {
-	static String sharedDirectory = "/home/sharath/simpella_share/share1";
+	static String sharedDirectory = null;
 	int noOfFiles = 0;
 	int sizeOfFiles = 0;
 	
@@ -58,20 +58,22 @@ public class SimpellaFileShareDB {
 	
 	void recurssiveScanDir(String directory)
 	{
+		if(null!=directory){
 		File dir = new File(directory);
-		String[] files = dir.list();
-		for (int i = 0; i < files.length; i++){
-			File filename = new File(directory, files[i]);
-			if(filename.isDirectory()) {
-				recurssiveScanDir(filename.toString());
-			} else {
-				if(Simpella.debug) {
-					System.out.println("File scanned = " + filename.getName() + 
-							" size = " + filename.length() + 
-							" full path = " + filename.getAbsolutePath());
+			String[] files = dir.list();
+			for (int i = 0; i < files.length; i++){
+				File filename = new File(directory, files[i]);
+				if(filename.isDirectory()) {
+					recurssiveScanDir(filename.toString());
+				} else {
+					if(Simpella.debug) {
+						System.out.println("File scanned = " + filename.getName() + 
+								" size = " + filename.length() + 
+								" full path = " + filename.getAbsolutePath());
+					}
+					noOfFiles ++;
+					sizeOfFiles = sizeOfFiles + (int)filename.length();
 				}
-				noOfFiles ++;
-				sizeOfFiles = sizeOfFiles + (int)filename.length();
 			}
 		}
 	}
