@@ -46,7 +46,7 @@ public class SimpellaFileServer {
 	 * @param tcpServerPort
 	 *            the tcp server port
 	 */
-	private void FileServerThread(int fileServerPort) throws Exception {
+	private void FileServerThread(int fileServerPort){
 		// create client socket
 		class FileServerServiceThread implements Runnable {
 			private Socket clientSocket;

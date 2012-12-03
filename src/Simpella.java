@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Formatter;
 
 /**
@@ -51,7 +52,7 @@ public class Simpella {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args){
 
 		SimpellaNetServer netSrv = new SimpellaNetServer();
 		SimpellaFileServer fileSrv = new SimpellaFileServer();
@@ -59,6 +60,8 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
+		
+		try{
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
 			SimpellaConnectionStatus.simpellaNetPort = netPort;
@@ -70,9 +73,22 @@ public class Simpella {
 
 			fileDwPort = Integer.parseInt(args[1]);
 			SimpellaConnectionStatus.simpellaFileDownloadPort = fileDwPort;
+		}else{
+			System.out.println("Invalid arguments");
+			System.exit(0);
 		}
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(
-					InetAddress.getLocalHost().getHostAddress(), netPort);
+		}
+		catch(NumberFormatException ne){
+			System.out.println("Enter only numbers for port numbers");
+			System.exit(0);
+		}
+		try {
+			SimpellaConnectionStatus.checkAndAddIpToGlobalTable(
+						InetAddress.getLocalHost().getHostAddress(), netPort);
+		} catch (UnknownHostException e2) {
+			System.out.println("Unable to connect to host.. exiting");
+			System.exit(0);
+		}
 		netSrv.setPort(netPort);
 		netSrv.start();
 		fileSrv.setPort(fileDwPort);
@@ -89,6 +105,10 @@ public class Simpella {
 			System.out.print("Simpella> ");
 			String usrInput = null;
 			try {
+				if(null==cmdFromUser){
+					System.out.println("Simpella forcibly ended.. Thank you for using me");
+					System.exit(0);
+				}
 				// trim() deletes leading and trailing whitespace
 				usrInput = cmdFromUser.readLine().trim();
 			} catch (IOException e) {
@@ -101,10 +121,66 @@ public class Simpella {
 			}
 			// This regex ignores whitespace between words
 			String[] cmd_args = usrInput.split("\\s+");
-
+			int portNo;
 			if (cmd_args[0].equals("open")) {
 				System.out.println("open command");
-				client.setConnectionIP(cmd_args[1]);
+				if(cmd_args.length>3){
+					System.out.println("Invalid input for open command. Sample input 'open <Ip address/Hostname> <port>'");
+					continue;
+				}
+				String ip_afterConversion="";
+				String connectionIP = cmd_args[1];
+				try {
+					if(InetAddress.getByName(connectionIP).isLoopbackAddress()){
+						System.out.println("Loopback address not allowed");
+						continue;
+					}
+                    ip_afterConversion = InetAddress.getByName(connectionIP).getHostAddress();
+                    if(Simpella.debug){
+                    	System.out.println("converted : "+ip_afterConversion+",  Actual ip : "+connectionIP+",   isLoopback: "+InetAddress.getByName(connectionIP).isLoopbackAddress());
+                    }
+	            } catch (UnknownHostException e1) {
+	                   System.out.println("Host not found");
+	            }
+
+				/*
+				boolean isIP = SimpellaIPUtils.validateIP(cmd_args[1]);
+				if (isIP) {
+					//check for local ip/hostname
+					if (cmd_args[1].startsWith("127.") || //block all IPs from 127.0.0.1 to 127.255.255.254
+							cmd_args[1].equals(localip.getHostAddress())) {
+						System.out
+								.println("Enter the IP of a remote machine");
+						break;
+					}
+				} else {
+					//validate hostname
+					try {
+						InetAddress.getByName(cmd_args[1]);					
+					} catch (UnknownHostException e1) {
+						System.out.println("Enter valid host name");
+						break;
+					}
+					 try {
+						if(cmd_args[1].equalsIgnoreCase("localhost") ||
+								cmd_args[1].equalsIgnoreCase(InetAddress.getLocalHost().getHostName())||
+								cmd_args[1].equalsIgnoreCase(localip.getHostName())) {
+							 System.out.println("Enter hostname of a remote machine"); 
+							 break;
+						 }
+					} catch (UnknownHostException e) {
+						System.out.println("Cannot resolve localhost IP. Continuing");
+						break;
+					}
+				}
+				 end of checks for local connections */
+				
+				portNo = SimpellaIPUtils.StringtoPort(cmd_args[2]);
+				if (portNo == -1) {
+					continue;
+				}
+				
+				client.setConnectionIP(ip_afterConversion);
 				client.setConnectionPort(Integer.parseInt(cmd_args[2]));
 				client.connect();
 
@@ -119,7 +195,11 @@ public class Simpella {
 				
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
-				update();
+				if(cmd_args.length!=1){
+					System.out.println("Invalid arguments for update. Enter only 'update'");
+				}else{
+					update();
+				}
 				
 			} else if (cmd_args[0].equals("find")) {
 				System.out.println("find command");
@@ -128,7 +208,12 @@ public class Simpella {
                         .indexOf(" ") + 1);
 				find(userTxt);
 				//wait until user presses enter
-				cmdFromUser.readLine();
+				try {
+					cmdFromUser.readLine();
+				} catch (IOException e) {
+					System.out.println("Error while reading from user");
+					continue;
+				}
 				clearFINDFlag();
 				int count = SimpellaConnectionStatus.getQueryhitsReceivedCount();
 				SimpellaConnectionStatus.clearQueryhitsReceivedCount();
@@ -140,25 +225,49 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("list")) {
 				System.out.println("list command");
-				for(int i = 0; i < SimpellaConnectionStatus.queryResults.size(); i++) {
-					SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
-					System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
-						+ " \t Size:" + res.getFile_size() + " Bytes\nName: " + res.getFileName());
+				if(cmd_args.length!=1){
+					System.out.println("List command does not take any arguments. Please enter only 'list'");
+				}
+				else{
+					for(int i = 0; i < SimpellaConnectionStatus.queryResults.size(); i++) {
+						SimpellaQueryResults res = SimpellaConnectionStatus.queryResults.get(i);
+						System.out.println(i+1 + " " + res.getIpAddress() + ":" + res.getPort()
+							+ " \t Size:" + res.getFile_size() + " Bytes\nName: " + res.getFileName());
+					}
 				}
 				
 				
 			} else if (cmd_args[0].equals("clear")) {
 				System.out.println("clear command");
-				if(cmd_args.length == 2) {
-					int clear_index = Integer.parseInt(cmd_args[1]);
-					SimpellaConnectionStatus.clearQueryResultsTable(clear_index - 1);
-				} else {
-					SimpellaConnectionStatus.clearQueryResultsTable();
-				}			
+				if(cmd_args.length>2){
+					System.out.println("Invalid arguments Clear command");
+					continue;
+				}
+				else{
+					if(cmd_args.length == 2) {
+						int clear_index = Integer.parseInt(cmd_args[1]);
+						SimpellaConnectionStatus.clearQueryResultsTable(clear_index - 1);
+					} else {
+						SimpellaConnectionStatus.clearQueryResultsTable();
+					}	
+				}
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
+				if(cmd_args.length!=2){
+					System.out.println("Invalid arguments for download");
+					continue;
+				} else {	
 				SimpellaFileClient fileDw = new SimpellaFileClient();
-				fileDw.downloadFile(Integer.parseInt(cmd_args[1]));
+					try {
+						fileDw.downloadFile(Integer.parseInt(cmd_args[1]));
+					} catch (NumberFormatException ne) {
+						System.out.println("Only number allowed in download command");
+						continue;
+					} catch (Exception e){
+						System.out.println("Error during file download");
+						continue;
+					}
+				}
 			
 			} else if (cmd_args[0].equals("share")) {
 				if(cmd_args.length > 1 && cmd_args[1].equals("-i")) {
@@ -173,32 +282,12 @@ public class Simpella {
 						continue;
 					}
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
-					/*
-					SimpellaFileShareDB fd = updateFilesandKbs();
-					
-					//set shared files data
-					int totalFiles = SimpellaConnectionStatus.getTotalFiles();
-					
-					if(totalFiles>prevSharedFiles){
-						totalFiles = totalFiles - prevSharedFiles;
-					}
-					else{
-						totalFiles = prevSharedFiles - totalFiles;
-					}
-					prevSharedFiles=fd.getNoOfFiles();
-					SimpellaConnectionStatus.setTotalFiles(totalFiles+fd.getNoOfFiles());
-					
-					int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
-					if(totalFilesSize>prevSharedFilesSize){
-						totalFilesSize = totalFilesSize - prevSharedFilesSize;
-					}else{
-						totalFilesSize = prevSharedFilesSize - totalFilesSize;
-					}
-					prevSharedFilesSize=fd.getSizeOfFiles();
-					SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+fd.getSizeOfFiles());
-					*/
 				}
 			} else if (cmd_args[0].equals("scan")) {
+				if(cmd_args.length!=1){
+					System.out.println("Invalid arguments for scan");
+					continue;
+				}
 				if(SimpellaFileShareDB.sharedDirectory == null) {
 					System.out.println("No files shared in the system. Use share /path/to/shared/folder");
 					continue;
@@ -210,17 +299,31 @@ public class Simpella {
 						+ fileDb.getSizeOfFiles() + " bytes");
 				
 			} else if (cmd_args[0].equals("monitor")) {
+				if(cmd_args.length!=1){
+					System.out.println("Invalid arguments for monitor");
+					continue;
+				}
 				System.out.println("MONITORING SIMPELLA NETWORK\n" + "Press enter to continue\n" 
 						+ "----------------------------");
 				setMONITORFlag();
-				cmdFromUser.readLine();
+				try {
+					cmdFromUser.readLine();
+				} catch (IOException e) {
+					System.out.println("Error while reading from user");
+					continue;
+				}
 				clearMONITORFlag();
 				
 			} else if (cmd_args[0].equals("quit")) {
+				if(cmd_args.length!=1){
+					System.out.println("Only type 'quit' without arguments to quit from Simpella");
+					continue;
+				}
 				System.out.println("quit command");
+				System.out.println("Thank you for using Simpella. See you again");
 				//TODO close all sockets
 				System.exit(0);
-			} else if (cmd_args[0].equals("debug")) {
+			} else if (cmd_args[0].equals("debug")) {//for developer usage
 				if(debug == true) {
 					System.out.println("Switching off debug mode");
 					debug = false;
@@ -250,6 +353,11 @@ public class Simpella {
 
 	private static void infoCommand(String[] cmd) {
 		if (cmd[1].equalsIgnoreCase("h")) {
+			SimpellaFileShareDB fd = new SimpellaFileShareDB();
+			System.out.println("Scanning local files for changes and set total files of Simpella system accordingly");
+			fd.scanSharedDirectory();
+			SimpellaConnectionStatus.setLocalFilesShared(fd.getNoOfFiles());
+			SimpellaConnectionStatus.setLocalFilesSharedSize(fd.getSizeOfFiles());
 			Formatter info_fmt = new Formatter();
 			info_fmt.format("%-15s %-24s %-10s\n", "Hosts", "Files", "Size");
 			info_fmt.format("%-15d %-24s %-24s", SimpellaConnectionStatus
@@ -351,12 +459,12 @@ public class Simpella {
 					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
 							.getLocalFilesSharedSize()));
 		} else {
-			System.out.println("invalid info value");
+			System.out.println("Invalid value for info. Usage sample info <h,c,n,d,q,s>");
 		}
 	}
 
 
-	public static void find(String searchTxt) throws Exception
+	public static void find(String searchTxt)
 
 	{
 		if (searchTxt.getBytes().length <= 231) {
@@ -374,8 +482,12 @@ public class Simpella {
 			querySpeed[1] = 0;
 
 			ByteArrayOutputStream payLoad = new ByteArrayOutputStream();
-			payLoad.write(querySpeed);
-			payLoad.write((searchTxt + '\0').getBytes()); //make it a null terminated string
+			try {
+				payLoad.write(querySpeed);
+				payLoad.write((searchTxt + '\0').getBytes()); //make it a null terminated string
+			} catch (IOException e) {
+				System.out.println("Error while sending query");
+			}
 			System.out.println("In initialize query. Writing a payLoad of " + payLoad.size());
 			String guid = SimpellaRoutingTables.guidToString(queryHeader);
 			SimpellaRoutingTables.generatedQueryList.add(guid);
@@ -389,10 +501,10 @@ public class Simpella {
 		
 		return;
 	}
-	public static SimpellaFileShareDB updateFilesandKbs(){
+	/*public static SimpellaFileShareDB updateFilesandKbs(){
 		SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 		fileDb.scanSharedDirectory();
 		return fileDb;
 
-	}
+	}*/
 }

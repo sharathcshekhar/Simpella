@@ -80,8 +80,6 @@ public class SimpellaClient {
 				System.out.println(S.substring(17, len - 2));
 				//Acknowledge the connection and complete the 3 way handshake.
 				outToServer.write(S.getBytes());
-				//add if unique ip to global list
-			//	SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP,connectionPort);
 				//Spawn a thread to handle the connection
 				Thread clienListner_t = new Thread(new clientConnectionThread(
 						clientSocket));

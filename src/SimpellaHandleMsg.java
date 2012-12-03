@@ -115,10 +115,11 @@ private SimpellaStats stats;
 				//add if unique ip to global list
 				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip, port_number);
 				//set shared files data
-				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
-				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
-				int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
-				SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+size_shared);
+			int otherFiles = SimpellaConnectionStatus.getOtherFiles();
+				SimpellaConnectionStatus.setOtherFiles(otherFiles+no_of_file_shared);
+				int otherFilesSize = SimpellaConnectionStatus.getOtherFilesSize();
+				SimpellaConnectionStatus.setOtherFilesSize(otherFilesSize+size_shared);
+
 				if(SimpellaConnectionStatus.outgoingConnectionCount < 2) {
 				/* try to maintain at least 2 outgoing connections
 				 * connect only to unique IPs, check if the IP from where
@@ -546,8 +547,6 @@ private SimpellaStats stats;
 	 * @param queryPayLoad
 	 * @param sender
 	 *            the sender
-	 * @throws Exception
-	 *        static     the exception
 	 */
 	public void broadcastQuery(byte[] header, byte[] queryPayLoad,
 			Socket sender) {

@@ -28,7 +28,6 @@ public class SimpellaFileShareDB {
 	
 	public static void setSharedDirectory(String dir)
 	{
-		//TODO if relative path, use pwd:dir
 		sharedDirectory = dir;
 	}
 	

@@ -16,8 +16,8 @@ public class SimpellaConnectionStatus {
 			new SimpellaStats[3];
 	//public static Hashtable<String,Integer> globalIpTable = new Hashtable<String,Integer>();
 	
-	private static int totalFiles = 0;
-	private static int totalFilesSize = 0;
+	private static int otherFiles = 0;
+	private static int otherFilesSize = 0;
 	private static int localFilesShared = 0;
 	private static int localFilesSharedSize = 0;
 	private static int totalPacketsSent = 0;
@@ -96,25 +96,34 @@ public class SimpellaConnectionStatus {
 	}
 
 	public static int getTotalFiles() {
-		return totalFiles;
-	}
-
-	public static void setTotalFiles(int totalFiles) {
-		SimpellaConnectionStatus.totalFiles= totalFiles;
+		return otherFiles+localFilesShared;
 	}
 
 	public static int getTotalFilesSize() {
-		return totalFilesSize;
+		return otherFilesSize+localFilesSharedSize;
 	}
-
+	
 	public static void setTotalPacketsSent() {
 		SimpellaConnectionStatus.totalPacketsSent++;
 	}
 
-	public static void setTotalFilesSize(int totalFilesSize) {
-		SimpellaConnectionStatus.totalFilesSize= totalFilesSize;
+	public static int getOtherFiles() {
+		return otherFiles;
 	}
 
+	public static void setOtherFiles(int otherFiles) {
+		SimpellaConnectionStatus.otherFiles = otherFiles;
+	}
+
+	public static int getOtherFilesSize() {
+		return otherFilesSize;
+	}
+
+	public static void setOtherFilesSize(int otherFilesSize) {
+		SimpellaConnectionStatus.otherFilesSize = otherFilesSize;
+	}
+
+	
 	public static int getQueriesRecvd() {
 		return queriesRecvd;
 	}
@@ -277,6 +286,18 @@ public class SimpellaConnectionStatus {
 		}
 	}
 
+	private static void removeFromGlobalIpTable(ipConfig ipPort){
+		int k =globalIpTable.size();
+		for(int j=0; j<k; j++){
+			if(globalIpTable.get(j).getIpAddress().equals(ipPort.getIpAddress())&&
+					globalIpTable.get(j).getPort()==ipPort.getPort()){
+				ipPort = globalIpTable.get(j);
+				break;
+			}
+		}
+		globalIpTable.remove(ipPort);
+	}
+	
 	public static void delIncomingConnection(Socket clientSocket) {
 		for (int i = 0; i < 3; i++) {
 			if(incomingConnectionList[i].sessionSocket == null) {
@@ -287,6 +308,10 @@ public class SimpellaConnectionStatus {
 				incomingConnectionList[i].remotePort = 0;
 				incomingConnectionList[i].sessionSocket = null;
 				incomingConnectionCount--;
+				ipConfig ipPort = new ipConfig();
+				ipPort.setIpAddress(clientSocket.getInetAddress().getHostAddress());
+				ipPort.setPort(clientSocket.getPort());
+				removeFromGlobalIpTable(ipPort);
 				if(Simpella.debug) {
 					System.out
 						.println("Removed connection from IN List, no of conections = " +
@@ -342,6 +367,10 @@ public class SimpellaConnectionStatus {
 				outgoingConnectionList[i].remotePort = 0;
 				outgoingConnectionList[i].sessionSocket = null;
 				outgoingConnectionCount--;
+				ipConfig ipPort = new ipConfig();
+				ipPort.setIpAddress(clientSocket.getInetAddress().getHostAddress());
+				ipPort.setPort(clientSocket.getPort());
+				removeFromGlobalIpTable(ipPort);
 				return;
 			}
 		}
