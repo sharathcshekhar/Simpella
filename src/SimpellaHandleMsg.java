@@ -5,16 +5,23 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
 public class SimpellaHandleMsg {
 private SimpellaStats stats;
-	public void handleMsg(byte[] header, Socket sessionSocket) throws Exception {
+	public void handleMsg(byte[] header, Socket sessionSocket) {
 
-		DataInputStream inFromClient = new DataInputStream(
-				sessionSocket.getInputStream());
+		DataInputStream inFromClient;
+		try {
+			inFromClient = new DataInputStream(
+					sessionSocket.getInputStream());
+		} catch (IOException e2) {
+			System.out.println("Unable to handle data packet, connection gone bad, will try again");
+			return;
+		}
 		/*
 		 * Handle PING Message
 		 */
@@ -55,7 +62,13 @@ private SimpellaStats stats;
 			int payLoadLen = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
 			
 			byte[] pongPayLoad = new byte[14];
-			int len = inFromClient.read(pongPayLoad, 0, 14);
+			int len;
+			try {
+				len = inFromClient.read(pongPayLoad, 0, 14);
+			} catch (IOException e1) {
+				System.out.println("Unable to read data from pong message, ignoring packet");
+				return;
+			}
 			if (len != payLoadLen) {
 				System.out.println("Something has gone wrong!");
 				return;
@@ -75,7 +88,14 @@ private SimpellaStats stats;
 				
 				//read ip address, 4 bytes
 				msg.read(pong_tmp_buf, 0, 4);
-				String ip = InetAddress.getByAddress(pong_tmp_buf).getHostAddress();
+				String ip;
+				try {
+					ip = InetAddress.getByAddress(pong_tmp_buf).getHostAddress();
+				} catch (UnknownHostException e) {
+					// TODO Auto-generated catch block
+					System.out.println("Unable to resolve host in pong message, ignoring packet");
+					return;
+				}
 				
 				//read no of files shared - 4 bytes
 				msg.read(pong_tmp_buf, 0, 4);
@@ -156,12 +176,24 @@ private SimpellaStats stats;
 				// report error
 				System.out.println("payload > 256 bytes, dropping the packet");
 				//discard the packet by consuming the bytes in the packet
-				inFromClient.skipBytes(payLoadLen);
+				try {
+					inFromClient.skipBytes(payLoadLen);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					System.out.println("Failed to read Query message, ignoring");
+				}
 				return;
 			}
 			// consume payLoadLen amount of data irrespective of it belongs to you or not!
 			byte[] queryPayLoad = new byte[payLoadLen];
-			int len = inFromClient.read(queryPayLoad, 0, payLoadLen);
+			int len;
+			try {
+				len = inFromClient.read(queryPayLoad, 0, payLoadLen);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println("Unable to read Query data from the stream");
+				return;
+			}
 					
 			String queryid = SimpellaRoutingTables.guidToString(header);
 			
@@ -205,7 +237,11 @@ private SimpellaStats stats;
 				 * Crude way of setting GUID 
 				 * TODO make it more elegant
 				 */
-				replyWithQueryHit(sessionSocket, searchString, header);
+				try {
+					replyWithQueryHit(sessionSocket, searchString, header);
+				} catch (IOException e) {
+					System.out.println("Failed to send query hit, dropping the packet");
+				}
 
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
@@ -229,7 +265,13 @@ private SimpellaStats stats;
 			int payLoadLen = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 			
 			byte[] queryHitPayLoad = new byte[payLoadLen];
-			int len = inFromClient.read(queryHitPayLoad, 0, payLoadLen);
+			int len;
+			try {
+				len = inFromClient.read(queryHitPayLoad, 0, payLoadLen);
+			} catch (IOException e1) {
+				System.out.println("Unable to read date from the socket");
+				return;
+			}
 
 			
 			if(Simpella.debug) {
@@ -257,14 +299,20 @@ private SimpellaStats stats;
 				msg.read(qHit_tmp_buffer, 2, 2);
 				int port_no = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 				byte[] ip_address = new byte[4];
-				msg.read(ip_address);
-				msg.read(qHit_tmp_buffer);
+				msg.read(ip_address, 0, 4);
+				String ip_str = null;
+				try {
+					ip_str = InetAddress.getByAddress(ip_address).getHostAddress();
+				} catch (UnknownHostException e) {
+					System.out.println("Unable to resolve host from which Queryhit came");
+					// TODO close the connection?
+				}
+				msg.read(qHit_tmp_buffer, 0, 4);
 				int speed = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 				if (Simpella.debug) {
 					System.out.println("no of files " + no_of_files
 							+ " port_num = " + port_no + " ip = "
-							+ InetAddress.getByAddress(ip_address).getHostAddress()
-							+ " Speed = " + speed);
+							+ ip_str + " Speed = " + speed);
 					int k;
 					for (k = 0; k < len; k++) {
 						System.out.println("Received QueryHit payLoad[" + k
@@ -280,15 +328,15 @@ private SimpellaStats stats;
 				// 11 bytes would be header, 16 bytes trailer
 				while (bytes_read < (payLoadLen - 11 - 16)) {
 					SimpellaQueryResults queryHitRes = new SimpellaQueryResults();
-					queryHitRes.setIpAddress(InetAddress.getByAddress(ip_address).getHostAddress());
+					queryHitRes.setIpAddress(ip_str);
 					queryHitRes.setPort(port_no);
 					
-					msg.read(qHit_tmp_buffer);
+					msg.read(qHit_tmp_buffer, 0, 4);
 					int file_index = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 					bytes_read += 4;
 					queryHitRes.setFile_index(file_index);
 
-					msg.read(qHit_tmp_buffer);
+					msg.read(qHit_tmp_buffer, 0, 4);
 					int file_size = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
 					bytes_read += 4;
 					queryHitRes.setFile_size(file_size);
@@ -313,7 +361,7 @@ private SimpellaStats stats;
 				}
 				
 				byte[] serventID = new byte[16];
-				msg.read(serventID); //no use of this
+				msg.read(serventID, 0, 16); //no use of this
 
 			} else if (SimpellaRoutingTables.QueryTable.containsKey(guid)) {
 				// if not route to the appropriate node
@@ -398,8 +446,7 @@ private SimpellaStats stats;
 	 * except sender. If sender = null, send message to all existing
 	 * connections
 	 */
-	public void broadcastPing(byte[] pingMsg, Socket sender)
-			throws Exception {
+	public void broadcastPing(byte[] pingMsg, Socket sender) {
 		Socket clientSocket = null;
 		String clientIP = "";
 		System.out.println("In broadcast ping");
@@ -408,9 +455,7 @@ private SimpellaStats stats;
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
 			clientIP = SimpellaConnectionStatus.incomingConnectionList[i].remoteIP;
 			int clientPort = SimpellaConnectionStatus.incomingConnectionList[i].remotePort;
-/*			if (!(clientIP.equals(""))
-					&& !((sender.getInetAddress().getHostAddress()
-							.equals(clientIP)) && (sender.getPort() == clientPort))) { */
+
 			if (!clientIP.equals("")) {
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
@@ -418,16 +463,23 @@ private SimpellaStats stats;
 					/* send to everyone apart from this node */
 					System.out.println("sending ping to IP: " + clientIP
 							+ " Port = " + clientPort);
-					DataOutputStream outToServents = new DataOutputStream(
-							clientSocket.getOutputStream());
-					outToServents.write(pingMsg);
+					DataOutputStream outToServents;
+					try {
+						outToServents = new DataOutputStream(
+								clientSocket.getOutputStream());
+						outToServents.write(pingMsg);
+					} catch (IOException e) {
+							System.out.println("Connection terminated at the Server end");
+							continue;
+							//TODO remove connection List
+						}
 				//set bit and pack for info command
 				stats = SimpellaConnectionStatus.getBySocket(clientSocket);
-				if(null!=stats){
-				stats.setSentBytes(pingMsg.length);
-				stats.setSentPacks();
-				SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
-				SimpellaConnectionStatus.setTotalPacketsSent();		
+				if (null != stats) {
+					stats.setSentBytes(pingMsg.length);
+					stats.setSentPacks();
+					SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
+					SimpellaConnectionStatus.setTotalPacketsSent();		
 				}
 			}
 		}
@@ -446,19 +498,26 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
+					/* send to everyone apart from this node */
 					System.out.println("sending ping to IP: " + clientIP
 							+ " Port = " + clientPort);
-					/* send to everyone apart from this node */
-					DataOutputStream outToServents = new DataOutputStream(
-							clientSocket.getOutputStream());
-					outToServents.write(pingMsg);
-				//set bit and pack for info command
-				stats = SimpellaConnectionStatus.getBySocket(clientSocket);
-				if(null!=stats){
-					stats.setSentBytes(pingMsg.length);
-					stats.setSentPacks();
-					SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
-					SimpellaConnectionStatus.setTotalPacketsSent();		
+					DataOutputStream outToServents;
+					try {
+						outToServents = new DataOutputStream(
+								clientSocket.getOutputStream());
+						outToServents.write(pingMsg);
+					} catch (IOException e) {
+						System.out.println("Connection terminated at the Client end");
+						continue;
+						//TODO remove connection List
+					}
+					//set bit and pack for info command
+					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
+					if(null != stats){
+						stats.setSentBytes(pingMsg.length);
+						stats.setSentPacks();
+						SimpellaConnectionStatus.setTotalBytesSent(pingMsg.length);
+						SimpellaConnectionStatus.setTotalPacketsSent();		
 				}
 			}
 		}
@@ -476,18 +535,21 @@ private SimpellaStats stats;
 	 *        static     the exception
 	 */
 	public void broadcastQuery(byte[] header, byte[] queryPayLoad,
-			Socket sender) throws Exception {
+			Socket sender) {
 		Socket clientSocket = null;
 		String clientIP = "";
 		byte[] queryPacket = SimpellaHeader.getSimpellaPacket(header, queryPayLoad);
-		if(Simpella.debug) {
-			System.out.println("In broadcast query with packet Length = " + queryPayLoad.length);
-			for(int j = 0; j < queryPayLoad.length; j++) {
-				System.out.println("broadcast: Query Payload["+j+"] = " + queryPayLoad[j]);
+		if (Simpella.debug) {
+			System.out.println("In broadcast query with packet Length = "
+					+ queryPayLoad.length);
+			for (int j = 0; j < queryPayLoad.length; j++) {
+				System.out.println("broadcast: Query Payload[" + j + "] = "
+						+ queryPayLoad[j]);
 			}
 		}
+
 		for (int i = 0; i < 3; i++) {
-			if(Simpella.debug) {
+			if (Simpella.debug) {
 				System.out.println("In broadcast incoming " + i);
 			}
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
@@ -498,30 +560,37 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
-					if(Simpella.debug) {
+					if (Simpella.debug) {
 						System.out.println("broadcast incoming " + clientIP
-							+ " port = " + clientPort);
-					}	
+								+ " port = " + clientPort);
+					}
 					/* send to everyone apart from this node */
-					DataOutputStream outToServents = new DataOutputStream(
-							clientSocket.getOutputStream());
-					
-					//outToServents.write(header);
-					//outToServents.write(queryPayLoad);
-					outToServents.write(queryPacket);
-					//set bit and pack for info command
+					DataOutputStream outToServents;
+
+					try {
+						outToServents = new DataOutputStream(
+								clientSocket.getOutputStream());
+						outToServents.write(queryPacket);
+					} catch (IOException e) {
+						System.out.println("Connection terminated at the Client end");
+						continue;
+						//TODO remove connection List
+					}
+					// set bit and pack for info command
 					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
-					if(null!=stats){
+					if (null != stats) {
 						stats.setSentBytes(queryPayLoad.length + header.length);
 						stats.setSentPacks();
-						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length + header.length);
+						SimpellaConnectionStatus
+								.setTotalBytesSent(queryPayLoad.length
+										+ header.length);
 						SimpellaConnectionStatus.setTotalPacketsSent();
 					}
 				}
 			}
 		}
 		for (int j = 0; j < 3; j++) {
-			if(Simpella.debug) {
+			if (Simpella.debug) {
 				System.out.println("In broadcast outgoing " + j);
 			}
 			clientSocket = SimpellaConnectionStatus.outgoingConnectionList[j].sessionSocket;
@@ -532,7 +601,7 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
-					if(Simpella.debug) {
+					if (Simpella.debug) {
 						System.out.println("broadcast outgoing " + clientIP
 								+ " port = " + clientPort);
 					}
@@ -540,23 +609,30 @@ private SimpellaStats stats;
 					 * send to everyone apart from this node If sender is null,
 					 * send it to all
 					 */
-					DataOutputStream outToServents = new DataOutputStream(
-							clientSocket.getOutputStream());
-					
-				//	outToServents.write(header);
-				//	outToServents.write(queryPayLoad);
-					outToServents.write(queryPacket);
-					//set bit and pack for info command
+					DataOutputStream outToServents;
+					try {
+						outToServents = new DataOutputStream(
+								clientSocket.getOutputStream());
+						outToServents.write(queryPacket);
+					} catch (IOException e) {
+							System.out.println("Connection terminated at the Server end");
+							continue;
+							//TODO remove connection List
+					}
+					// set bit and pack for info command
 					stats = SimpellaConnectionStatus.getBySocket(clientSocket);
-					if(null!=stats){
-						stats.setSentBytes(queryPayLoad.length+header.length);
+					if (null != stats) {
+						stats.setSentBytes(queryPayLoad.length + header.length);
 						stats.setSentPacks();
-						SimpellaConnectionStatus.setTotalBytesSent(queryPayLoad.length+header.length);
+						SimpellaConnectionStatus
+								.setTotalBytesSent(queryPayLoad.length
+										+ header.length);
 						SimpellaConnectionStatus.setTotalPacketsSent();
 					}
 				}
 			}
 		}
+		
 	}
 
 	public void replyWithQueryHit(Socket sessionSocket,
@@ -568,19 +644,21 @@ private SimpellaStats stats;
 		queryHitHeader.setMsgId(queryHeader);
 		queryHitHeader.setMsgType("queryhit");
 		SimpellaFileShareDB db = new SimpellaFileShareDB();
-		
-		System.out.println("In replyWithQuery, searchString " + searchString);
 		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
-		Iterator<Object> itr1 = searchResults.iterator();
-		while (itr1.hasNext()) {
-			Integer fileIndex = (Integer) itr1.next();
-			Long size = (Long) itr1.next();
-			String filename = (String) itr1.next();
-			if(Simpella.debug){
-				System.out.println("File index = " + fileIndex + " size in long "
-						+ size + " size in int = " + size.intValue() + " filename "
-						+ filename);
-				System.out.println("replying with a query-hit");
+
+		if(Simpella.debug) {
+			System.out.println("In replyWithQuery, searchString " + searchString);
+			Iterator<Object> itr1 = searchResults.iterator();
+			while (itr1.hasNext()) {
+				Integer fileIndex = (Integer) itr1.next();
+				Long size = (Long) itr1.next();
+				String filename = (String) itr1.next();
+				if(Simpella.debug){
+					System.out.println("File index = " + fileIndex + " size in long "
+							+ size + " size in int = " + size.intValue() + " filename "
+							+ filename);
+					System.out.println("replying with a query-hit");
+				}
 			}
 		}
 		
@@ -633,7 +711,7 @@ private SimpellaStats stats;
 			}
 			// TODO this has to be a constant value stored in
 			// a static variable somewhere.
-			byte[] serventID = new byte[16];
+			byte[] serventID = SimpellaConnectionStatus.servent_UUID;
 			payLoad.write(serventID, 0, 16);
 			offset += 16;
 			byte[] payLoadArray = new byte[offset];

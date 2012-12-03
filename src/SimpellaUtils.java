@@ -1,6 +1,11 @@
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.util.Random;
+import java.util.UUID;
+
 
 
 public class SimpellaUtils {
@@ -8,10 +13,32 @@ public class SimpellaUtils {
 	public static void getR(byte[] head) {
 		 r.nextBytes(head);
 	}
+	
 	public static void setR(Random r) {
 		SimpellaUtils.r = r;
 	}
-	
+
+	/*
+	 * Generate UUID as a function of IP address and port
+	 */
+	public static byte[] generateServentID() {
+		byte[] uuid = new byte[16];
+		UUID servantID = UUID.nameUUIDFromBytes(
+				(Simpella.LOCAL_IP + SimpellaConnectionStatus.simpellaNetPort).getBytes());
+				
+		 ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		 DataOutputStream dos = new DataOutputStream(baos);
+		 try {
+			dos.writeLong(servantID.getMostSignificantBits());
+			dos.writeLong(servantID.getLeastSignificantBits());
+			dos.flush(); // May not be necessary
+		 } catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 uuid = baos.toByteArray();
+		 return uuid;
+	}
 
 	
 	/**

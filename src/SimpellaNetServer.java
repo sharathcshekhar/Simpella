@@ -97,6 +97,7 @@ public class SimpellaNetServer {
 			System.out.println("TCP connection Accepted..");
 			String inComingIP = clientSocket.getInetAddress().getHostAddress();
 			int inComingPort = clientSocket.getPort();
+			/* No point in checking this! DEAD code! */
 			if (SimpellaConnectionStatus.isInConnectionPresent(inComingIP,
 					inComingPort)
 					|| SimpellaConnectionStatus.isOutConnectionPresent(
@@ -110,7 +111,7 @@ public class SimpellaNetServer {
 							new TCPserverResponseThread(clientSocket));
 					tcp_serverResp_t.start();
 				} else {
-					String error = "SIMPELLA/0.6 503 Maximum number of connections reached";
+					String error = "SIMPELLA/0.6 503 Maximum number of connections reached. Sorry!";
 					System.out.println("Server replies with " + error);
 					DataOutputStream outToClient = new DataOutputStream(
 							clientSocket.getOutputStream());
@@ -129,21 +130,36 @@ public class SimpellaNetServer {
 	 */
 	public void TCPserverResponse(Socket clientSocket) throws Exception {
 		// New connection, check for the connection headers
-		String replyToConnect = "SIMPELLA/0.6 200 OK";
+		String replyToConnect = "SIMPELLA/0.6 200 OK\r\n";
 		DataOutputStream outToClient = new DataOutputStream(
 				clientSocket.getOutputStream());
 
 		DataInputStream inFromClient = new DataInputStream(
 				clientSocket.getInputStream());
-		byte[] cmd = new byte[512];
-		// TODO read larger messages in chunks
+		byte[] cmd = new byte[128];
+		
 		int len = inFromClient.read(cmd);
-
-		String S = new String(cmd);
+		if(len == -1) {
+			System.out.println("Client closed the connection unexpectedly");
+		}
+		String S = new String(cmd, 0, len);
 		if (S.substring(0, len).equals("SIMPELLA CONNECT/0.6\r\n")) {
-			System.out.println("Server replies with " + replyToConnect);
+			if(Simpella.debug) {
+				System.out.println("Server replies with " + replyToConnect);
+			}
 			outToClient.write(replyToConnect.getBytes());
-			SimpellaConnectionStatus.addIncomingConnection(clientSocket);
+			//wait for 3 way handshake from the client, read as many bytes
+			//as sent. Client should reply with the exact same message
+			len = inFromClient.read(cmd, 0, replyToConnect.length());
+			String threeWayHandshakedReply = new String(cmd, 0, len);
+			if(threeWayHandshakedReply.substring(0, len).equals(replyToConnect)) {
+				System.out.println(threeWayHandshakedReply.substring(17, len -2));
+				SimpellaConnectionStatus.addIncomingConnection(clientSocket);
+			} else {
+				System.out.println("Client did not respond with handshake signal, closing connection");
+				clientSocket.close();
+				return;
+			}
 						
 		} else {
 			System.out.println("Unknown connection request, ignoring");
@@ -161,7 +177,9 @@ public class SimpellaNetServer {
 				SimpellaConnectionStatus.setTotalPacketsRecvd();
 			}
 			if (len == -1) {
-				System.out.println("Client has close the socket, exit");
+				System.out.println("Client has terminated the connection");
+				SimpellaConnectionStatus.delIncomingConnection(clientSocket);
+				clientSocket.close();
 				break;
 			}
 			SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();

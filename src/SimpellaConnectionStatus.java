@@ -5,6 +5,7 @@ import java.util.Vector;
 public class SimpellaConnectionStatus {
 	public static int simpellaNetPort = 0;
 	public static int simpellaFileDownloadPort = 0;
+	public static byte[] servent_UUID;
 	public static int incomingConnectionCount = 0;
 	public static int outgoingConnectionCount = 0;
 	public static SimpellaStats[] incomingConnectionList = 
@@ -99,6 +100,10 @@ public class SimpellaConnectionStatus {
 		return totalFilesSize;
 	}
 
+	public static void setTotalPacketsSent() {
+		SimpellaConnectionStatus.totalPacketsSent++;
+	}
+
 	public static void setTotalFilesSize(int totalFilesSize) {
 		SimpellaConnectionStatus.totalFilesSize= totalFilesSize;
 	}
@@ -139,10 +144,6 @@ public class SimpellaConnectionStatus {
 		return totalPacketsSent;
 	}
 
-	public static void setTotalPacketsSent() {
-		SimpellaConnectionStatus.totalPacketsSent++;
-	}
-
 	public static int getTotalPacketsRecvd() {
 		return totalPacketsRecvd;
 	}
@@ -174,12 +175,17 @@ public class SimpellaConnectionStatus {
 		outgoingConnectionCount = 0;
 		simpellaNetPort = 6346; //default port
 		simpellaFileDownloadPort = 5635; //default port
+		servent_UUID = SimpellaUtils.generateServentID(); // will be updated if the 
+														  //client is running on a diff port
 		}
 
 	public static void checkAndAddIpToGlobalTable(String ip, int port){
 		if(!globalIpTable.containsKey(ip))
 		{
 			globalIpTable.put(ip, Integer.valueOf(port));
+			if(Simpella.debug){
+				System.out.println("Unique IP, incrementing host count. Host count = " + totalHosts);
+			}
 			totalHosts++;
 		}
 		else if(globalIpTable.containsKey(ip) && globalIpTable.get(ip)!=Integer.valueOf(port)){
@@ -229,7 +235,8 @@ public class SimpellaConnectionStatus {
 				incomingConnectionCount--;
 				if(Simpella.debug) {
 					System.out
-						.println("Added connection to outgoingConnectionList");
+						.println("Removed connection from IN List, no of conections = " +
+								incomingConnectionCount);
 				}
 				return;
 			}

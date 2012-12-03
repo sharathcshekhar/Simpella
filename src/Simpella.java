@@ -57,12 +57,13 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(SimpellaIPUtils.getLocalIPAddress().getHostAddress(),
-				SimpellaConnectionStatus.simpellaNetPort);
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(LOCAL_IP, netPort);
 		
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
 			SimpellaConnectionStatus.simpellaNetPort = netPort;
+			//UUID is a function of IP and port #, so update UUID
+			SimpellaConnectionStatus.servent_UUID = SimpellaUtils.generateServentID();
 		} else 	if(args.length == 2) {
 			netPort = Integer.parseInt(args[0]);
 			SimpellaConnectionStatus.simpellaNetPort = netPort;
@@ -174,6 +175,10 @@ public class Simpella {
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
 				}
 			} else if (cmd_args[0].equals("scan")) {
+				if(SimpellaFileShareDB.sharedDirectory == null) {
+					System.out.println("No files shared in the system. Use share /path/to/shared/folder");
+					continue;
+				}
 				System.out.println("scanning " + SimpellaFileShareDB.sharedDirectory + " for files...");
 				SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 				fileDb.scanSharedDirectory();
