@@ -120,7 +120,7 @@ public class SimpellaClient {
 				}
 				//set packet and bit for info command
 				simpellaStats = SimpellaConnectionStatus.getBySocket(sessionSocket);
-				if(null!=simpellaStats){
+				if(null != simpellaStats){
 					simpellaStats.setRecvdBytes(len);
 					simpellaStats.setRecvdPacks();
 					SimpellaConnectionStatus.setTotalBytesRecvd(len);
@@ -132,6 +132,25 @@ public class SimpellaClient {
 							+ " has terminated the connection");
 					SimpellaConnectionStatus.delOutgoingConnection(sessionSocket);
 					sessionSocket.close();
+					//establish a new connection before quitting!
+					ipConfig ipconf = SimpellaConnectionStatus.getNewHostFromGlobalTable();
+					if(ipconf != null) {
+						/* nothing to do. There are no connection in 
+						 * the global table  
+						 */
+						SimpellaClient newClient = new SimpellaClient();
+						if(Simpella.debug) {
+							System.out.println("Trying to establish connection with " + ipconf.getIpAddress()
+									+ ":" + ipconf.getPort() );
+						}
+						newClient.setConnectionIP(ipconf.getIpAddress());
+						newClient.setConnectionPort(ipconf.getPort());
+						newClient.connect();
+					} else {
+						if(Simpella.debug) {
+							System.out.println("No new servents to establish the connection");
+						}
+					}
 					return;
 				}
 				msgHandler.handleMsg(header, sessionSocket);

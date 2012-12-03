@@ -119,6 +119,18 @@ private SimpellaStats stats;
 				int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
 				SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+size_shared);
 				//TODO Initiate connections depending on the results
+				if(SimpellaConnectionStatus.outgoingConnectionCount < 2) {
+				/* try to maintain at least 2 outgoing connections
+				 * connect only to unique IPs, check if the IP from where
+				 * pong originated is present in the connectionTables
+				 */
+					if(!SimpellaConnectionStatus.isIPConnectionPresent(ip)){
+						SimpellaClient newClient = new SimpellaClient();
+						newClient.setConnectionIP(ip);
+						newClient.setConnectionPort(port_number);
+						newClient.connect();
+					}
+				}
 				return;
 		
 			} else {

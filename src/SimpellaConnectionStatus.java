@@ -1,4 +1,7 @@
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.Vector;
 
 public class SimpellaConnectionStatus {
@@ -177,6 +180,26 @@ public class SimpellaConnectionStatus {
 														  //client is running on a diff port
 		}
 
+	public static ipConfig getNewHostFromGlobalTable() {
+		Iterator<ipConfig> itr = globalIpTable.iterator();
+		while (itr.hasNext()) {
+			ipConfig ipconf = itr.next();
+			try {
+				if(InetAddress.getByName(ipconf.getIpAddress()).isLoopbackAddress()) {
+					continue;
+				}
+			} catch (UnknownHostException e) {
+				System.out.println("Encountered error while resolving IP");
+				return null;
+			}
+			if(!isIPConnectionPresent(ipconf.getIpAddress())) {
+				return ipconf;
+			}
+		}
+		return null;
+		
+	}
+	
 	public static void checkAndAddIpToGlobalTable(String ip, int port){
 		ipConfig Ipcon = new ipConfig();
 		Ipcon.setIpAddress(ip);
@@ -217,6 +240,19 @@ public class SimpellaConnectionStatus {
 		}
 		return false;
 	}
+	/*
+	 * Checks if the given IP is present in either the incoming tables of the out-
+	 * going tables
+	 */
+	public static boolean isIPConnectionPresent(String IP) {
+		for (int i = 0; i < 3; i++) {
+			if (incomingConnectionList[i].remoteIP.equals(IP) ||
+					outgoingConnectionList[i].remoteIP.equals(IP)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public static void addIncomingConnection(Socket clientSocket) {
 		if (incomingConnectionCount == 3) {
@@ -240,6 +276,9 @@ public class SimpellaConnectionStatus {
 
 	public static void delIncomingConnection(Socket clientSocket) {
 		for (int i = 0; i < 3; i++) {
+			if(incomingConnectionList[i].sessionSocket == null) {
+				continue;
+			}
 			if (incomingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				incomingConnectionList[i].remoteIP = "";
 				incomingConnectionList[i].remotePort = 0;
@@ -293,6 +332,9 @@ public class SimpellaConnectionStatus {
 
 	public static void delOutgoingConnection(Socket clientSocket) {
 		for (int i = 0; i < 3; i++) {
+			if(outgoingConnectionList[i].sessionSocket == null) {
+				continue;
+			}
 			if (outgoingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				outgoingConnectionList[i].remoteIP = "";
 				outgoingConnectionList[i].remotePort = 0;

@@ -3,6 +3,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.util.Formatter;
 
 /**
@@ -69,7 +70,8 @@ public class Simpella {
 			fileDwPort = Integer.parseInt(args[1]);
 			SimpellaConnectionStatus.simpellaFileDownloadPort = fileDwPort;
 		}
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(LOCAL_IP, netPort);//TODO take second argument to be file server
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(
+					InetAddress.getLocalHost().getHostAddress(), netPort);
 		netSrv.setPort(netPort);
 		netSrv.start();
 		fileSrv.setPort(fileDwPort);
@@ -235,8 +237,8 @@ public class Simpella {
 							.getTotalFilesSize()));
 			System.out.println(info_fmt);
 		} else if (cmd[1].equalsIgnoreCase("c")) {
-			Formatter info_fmt = new Formatter();
 			for (int i = 0; i < SimpellaConnectionStatus.incomingConnectionCount; i++) {
+				Formatter info_fmt = new Formatter();
 				info_fmt.format(
 						"%-30s %-30s %-30s",
 						SimpellaConnectionStatus.incomingConnectionList[i]
