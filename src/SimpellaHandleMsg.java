@@ -143,7 +143,7 @@ private SimpellaStats stats;
 							+ pongFwdSocket.getInetAddress().getHostAddress());
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
-					if((header[17] == 0) || ((header[17] + header[18]) < 16)){
+					if((header[17] == 0) || ((header[17] + header[18]) > 15)){
 						//drop the packet if TTL limit has reached
 						return;
 					}
@@ -384,7 +384,7 @@ private SimpellaStats stats;
 				}
 				header[17]--; // decrement TTL
 				header[18]++; // Increment hops
-				if ((header[17] == 0) || ((header[17] + header[18]) < 16)) {
+				if ((header[17] == 0) || ((header[17] + header[18]) > 15)) {
 					//drop the packet
 					return;
 				}
