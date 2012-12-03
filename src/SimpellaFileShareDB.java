@@ -28,7 +28,6 @@ public class SimpellaFileShareDB {
 	
 	public static void setSharedDirectory(String dir)
 	{
-		//TODO if relative path, use pwd:dir
 		sharedDirectory = dir;
 	}
 	
@@ -42,7 +41,7 @@ public class SimpellaFileShareDB {
 	
 	public ArrayList<Object> getMatchingFiles(String pattern)
 	{
-		String[] keys = pattern.split("\\s+");
+		String[] keys = pattern.split("[\\s\\-_\\.]+");
 		if(Simpella.debug) {
 			System.out.println("In getMatchingFiles, string = " + pattern);
 			for(String tmp : keys) {
@@ -68,6 +67,10 @@ public class SimpellaFileShareDB {
 
 		File dir = new File(directory);
 		String[] files = dir.list();
+		/* if files are null, directory is empty */
+		if(files == null ) {
+			return;
+		}
 		for (int i = 0; i < files.length; i++) {
 			File filename = new File(directory, files[i]);
 			if (filename.isDirectory()) {
@@ -93,7 +96,7 @@ public class SimpellaFileShareDB {
 			if(file.isDirectory()) {
 				String result = recurssiveGetFile(file.getAbsolutePath(), filename, hashcode);
 				if(result != null)
-					return result;
+					return result; // else continue on the next iteration
 			} else {
 				if(file.getName().equals(filename)) {
 					if(file.hashCode() == hashcode) {
@@ -109,8 +112,10 @@ public class SimpellaFileShareDB {
 		File dir = new File(rootDir);
 		String[] filesInDir = dir.list();
 		ArrayList<Object> results = new ArrayList<Object>();
+		boolean isFileFound = false;
 				
 		for (int i = 0; i < filesInDir.length; i++){
+			isFileFound = false;
 			File file = new File(rootDir, filesInDir[i]);
 			if(file.isDirectory()) {
 				if (Simpella.debug) {
@@ -120,16 +125,26 @@ public class SimpellaFileShareDB {
 				ArrayList<Object> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
 				results.addAll(tmp);
 			} else {
+				String[] splitFileName = file.getName().split("[\\s\\-_\\.]+");
 				for(String s : keys) {
 					if (Simpella.debug) {
 						System.out.println("ELSE: Checking if filename " + file.getName() + " contains " 
 							+ s + " result = " + file.getName().contains(s.trim()));
 					}
-					if(file.getName().contains(s.trim())) {
-						//results.put(file.hashCode(), file.getName());
-						results.add(file.hashCode());
-						results.add(file.length());
-						results.add(file.getName());
+					for (String s2 : splitFileName) {
+						if (Simpella.debug) {
+							System.out.println("Checking if filename keyword " + s2);
+						}
+						if (s2.equalsIgnoreCase(s.trim())) {
+							results.add(file.hashCode());
+							results.add(file.length());
+							results.add(file.getName());
+							isFileFound = true;
+							break; //if file is already added, move to next file.
+						}
+					}
+					if(isFileFound) {
+						break; //if file is already added, move to next file.
 					}
 				}
 			}

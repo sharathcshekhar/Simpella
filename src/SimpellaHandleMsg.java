@@ -91,7 +91,6 @@ private SimpellaStats stats;
 				try {
 					ip = InetAddress.getByAddress(pong_tmp_buf).getHostAddress();
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
 					System.out.println("Unable to resolve host in pong message, ignoring packet");
 					return;
 				}
@@ -112,10 +111,10 @@ private SimpellaStats stats;
 				//add if unique ip to global list
 				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip, port_number);
 				//set shared files data
-				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
-				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
-				int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
-				SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+size_shared);
+				int otherFiles = SimpellaConnectionStatus.getOtherFiles();
+				SimpellaConnectionStatus.setOtherFiles(otherFiles+no_of_file_shared);
+				int otherFilesSize = SimpellaConnectionStatus.getOtherFilesSize();
+				SimpellaConnectionStatus.setOtherFilesSize(otherFilesSize+size_shared);
 				//TODO Initiate connections depending on the results
 				if(SimpellaConnectionStatus.outgoingConnectionCount < 2) {
 				/* try to maintain at least 2 outgoing connections
@@ -189,7 +188,6 @@ private SimpellaStats stats;
 				try {
 					inFromClient.skipBytes(payLoadLen);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					System.out.println("Failed to read Query message, ignoring");
 				}
 				return;
@@ -255,7 +253,7 @@ private SimpellaStats stats;
 		 * Handle QUERY-HIT 
 		 */
 		else if (header[16] == (byte) 0x81) {
-			// TODO handle message
+			
 			byte[] qHit_tmp_buffer = new byte[4];
 			qHit_tmp_buffer[0] = header[19];
 			qHit_tmp_buffer[1] = header[20];
@@ -304,7 +302,7 @@ private SimpellaStats stats;
 					ip_str = InetAddress.getByAddress(ip_address).getHostAddress();
 				} catch (UnknownHostException e) {
 					System.out.println("Unable to resolve host from which Queryhit came");
-					// TODO close the connection?
+					return;
 				}
 				msg.read(qHit_tmp_buffer, 0, 4);
 				int speed = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
@@ -530,8 +528,6 @@ private SimpellaStats stats;
 	 * @param queryPayLoad
 	 * @param sender
 	 *            the sender
-	 * @throws Exception
-	 *        static     the exception
 	 */
 	public void broadcastQuery(byte[] header, byte[] queryPayLoad,
 			Socket sender) {
@@ -667,7 +663,7 @@ private SimpellaStats stats;
 
 		if (!searchResults.isEmpty()) {
 			SimpellaConnectionStatus.setResponsesSent();
-			// TODO Reply with a query-hit
+			
 			byte[] tmp = new byte[4];
 			int offset = 0;
 			// write no. of files to 1st byte
@@ -709,8 +705,6 @@ private SimpellaStats stats;
 						filename.length() + 1);
 				offset += filename.length() + 1;
 			}
-			// TODO this has to be a constant value stored in
-			// a static variable somewhere.
 			byte[] serventID = SimpellaConnectionStatus.servent_UUID;
 			payLoad.write(serventID, 0, 16);
 			offset += 16;

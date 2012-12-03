@@ -6,7 +6,6 @@ import java.text.DecimalFormat;
 import java.util.Random;
 import java.util.UUID;
 
-
 public class SimpellaUtils {
 	static Random r = new SecureRandom();
 	public static void getR(byte[] head) {
@@ -32,8 +31,8 @@ public class SimpellaUtils {
 			dos.writeLong(servantID.getLeastSignificantBits());
 			dos.flush(); // May not be necessary
 		 } catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			 //TODO if required format error message
+				System.out.println("An internal Simpella error occured");
 			}
 		 uuid = baos.toByteArray();
 		 return uuid;
