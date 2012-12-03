@@ -16,12 +16,7 @@ public class SimpellaClient {
 				this.clientSocket = clientSocket;
 			}
 		public void run() {
-				try {
-					connectionListener(clientSocket);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				connectionListener(clientSocket);
 			}
 		}
 		;

@@ -119,8 +119,6 @@ public class Simpella {
 			} else if(cmd_args[0].equals("update")){
 				System.out.println("update command");
 				update();
-				//TODO Establish new connections if the present
-				//outgoing connections in < 2
 				
 			} else if (cmd_args[0].equals("find")) {
 				System.out.println("find command");
@@ -217,12 +215,7 @@ public class Simpella {
 		byte[] pingPacket = pingH.getHeader();
 		SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
 		System.out.println("Sending Ping broadcast packets to all known connections");
-		try {
-			msgHandler.broadcastPing(pingPacket, null);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		msgHandler.broadcastPing(pingPacket, null);
 	}
 
 
