@@ -100,8 +100,9 @@ public class SimpellaFileServer {
 	 * @param clientSocket
 	 *            the client socket
 	 */
-	public void fileServerService(Socket clientSocket) throws Exception {
+	public void fileServerService(Socket clientSocket){
 		byte[] input = new byte[512];
+		try{
 		int len = clientSocket.getInputStream().read(input);
 		System.out.println(len + "bytes of data read from client");
 		String request = new String(input);
@@ -138,17 +139,17 @@ public class SimpellaFileServer {
 		SimpellaFileShareDB sf = new SimpellaFileShareDB();
 		String file_fullPath = sf.getFullFilePath(parsedStrings[3].trim(), Integer.parseInt(parsedStrings[2]));
 		String response = null;
-		/*
+		
 		if(file_fullPath == null){
 			System.out.println("File not present");
 			response = "HTTP/1.1 503 File not found.\r\n\r\n";
 			clientSocket.getOutputStream().write(response.getBytes());
 			return;
 		}
-		*/
+		
 		File fileStream = new File(file_fullPath);
 		
-		byte[] fileBuffer = new byte[4096]; //Write through a 4Kb buffer
+		byte[] fileBuffer = new byte[1024]; //Write through a 4Kb buffer
 
 		response = "HTTP/1.1 200 OK\r\n";
 		String server = "Server: Simpella0.6\r\n";
@@ -167,6 +168,18 @@ public class SimpellaFileServer {
 			dos.write(fileBuffer, 0, i);
 		}
 		dos.close();
+	}
+		catch(IOException io){
+			String response;
+			System.out.println("File not present");
+			response = "Error while downloading file";
+			try {
+				clientSocket.getOutputStream().write(response.getBytes());
+			} catch (IOException e) {
+				System.out.println("Error while downloading file");
+			}			
+			System.out.println("Error while downloading file");
+		}
 	}
 
 	public int getPort() {

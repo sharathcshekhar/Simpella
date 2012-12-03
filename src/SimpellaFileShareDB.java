@@ -33,6 +33,10 @@ public class SimpellaFileShareDB {
 	}
 	
 	public void scanSharedDirectory() {
+		if(sharedDirectory == null) {
+			System.out.println("Scan request received, no direcotry shared");
+			return;
+		}
 		recurssiveScanDir(sharedDirectory);
 	}
 	
@@ -49,35 +53,36 @@ public class SimpellaFileShareDB {
 		ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
 		return results;
 	}
-	
+	/* Will return null if the file index/filename pair does not match */
 	public String getFullFilePath(String filename, int hashcode) {
 		return recurssiveGetFile(sharedDirectory, filename, hashcode);
 	}
 
 	/*Private helper functions*/
 	
-	void recurssiveScanDir(String directory)
-	{
-		if(null!=directory){
+	void recurssiveScanDir(String directory) {
+		if (directory == null) {
+			System.out.println("No directory is shared!");
+			return;
+		}
+
 		File dir = new File(directory);
-			String[] files = dir.list();
-			for (int i = 0; i < files.length; i++){
-				File filename = new File(directory, files[i]);
-				if(filename.isDirectory()) {
-					recurssiveScanDir(filename.toString());
-				} else {
-					if(Simpella.debug) {
-						System.out.println("File scanned = " + filename.getName() + 
-								" size = " + filename.length() + 
-								" full path = " + filename.getAbsolutePath());
-					}
-					noOfFiles ++;
-					sizeOfFiles = sizeOfFiles + (int)filename.length();
+		String[] files = dir.list();
+		for (int i = 0; i < files.length; i++) {
+			File filename = new File(directory, files[i]);
+			if (filename.isDirectory()) {
+				recurssiveScanDir(filename.toString());
+			} else {
+				if (Simpella.debug) {
+					System.out.println("File scanned = " + filename.getName()
+							+ " size = " + filename.length() + " full path = "
+							+ filename.getAbsolutePath());
 				}
+				noOfFiles++;
+				sizeOfFiles = sizeOfFiles + (int) filename.length();
 			}
 		}
 	}
-
 	
 	String recurssiveGetFile(String rootDirectory, String filename, int hashcode) {
 		File dir = new File(rootDirectory);
@@ -103,22 +108,23 @@ public class SimpellaFileShareDB {
 	ArrayList<Object> recurssiveFileSearch(String[] keys, String rootDir) {
 		File dir = new File(rootDir);
 		String[] filesInDir = dir.list();
-		//Hashtable<Integer, String> results = new Hashtable<Integer, String>();
 		ArrayList<Object> results = new ArrayList<Object>();
 				
 		for (int i = 0; i < filesInDir.length; i++){
 			File file = new File(rootDir, filesInDir[i]);
-			System.out.println("Checking filename " + file.getName());
 			if(file.isDirectory()) {
-				System.out.println("if dir");
+				if (Simpella.debug) {
+					System.out.println("Recurssing the directory");
+				}
 				//Hashtable<Integer, String> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
 				ArrayList<Object> tmp = recurssiveFileSearch(keys, file.getAbsolutePath());
 				results.addAll(tmp);
 			} else {
-				System.out.println("Else.. ");
 				for(String s : keys) {
-					System.out.println("Checking if filename " + file.getName() + " contains " 
+					if (Simpella.debug) {
+						System.out.println("ELSE: Checking if filename " + file.getName() + " contains " 
 							+ s + " result = " + file.getName().contains(s.trim()));
+					}
 					if(file.getName().contains(s.trim())) {
 						//results.put(file.hashCode(), file.getName());
 						results.add(file.hashCode());

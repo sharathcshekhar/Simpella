@@ -200,8 +200,6 @@ public class SimpellaHeader {
 		
 		payload[24] = payload_port[3];
 		payload[23] = payload_port[2];
-		System.out.println("Setting port no. to  0:1 " + 
-				payload_port[2] + payload_port[3]) ;
 		
 		byte[] ipAddr = new byte[4]; 
 		ipAddr = clientSocket.getLocalAddress().getAddress();
@@ -212,8 +210,14 @@ public class SimpellaHeader {
 		
 		SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 		fileDb.scanSharedDirectory();
-		System.out.println("replying with Pong, No of files = " + fileDb.getNoOfFiles() 
+		
+		if(Simpella.debug){
+			System.out.println("Setting port no. to  0:1 " + 
+				payload_port[2] + payload_port[3]) ;
+			System.out.println("replying with Pong, No of files = " + fileDb.getNoOfFiles() 
 				+ " Size = " + fileDb.getSizeOfFiles() + " bytes");
+		}
+		
 		byte[] fileShared = SimpellaUtils.toBytes(fileDb.getNoOfFiles());
 		byte[] fileSize = SimpellaUtils.toBytes(fileDb.getSizeOfFiles());
 		

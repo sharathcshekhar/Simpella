@@ -3,6 +3,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.util.Formatter;
 
 /**
@@ -27,7 +28,8 @@ public class Simpella {
 	private static boolean FIND_flag = false;
 	private static boolean MONITOR_flag = false;
 	public static boolean printDwnload = false;
-	
+	public static int prevSharedFiles = 0;
+	public static int prevSharedFilesSize = 0;
 	public static synchronized void setFINDFlag() {
 		FIND_flag = true;
 	}
@@ -57,7 +59,6 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
-		
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
 			SimpellaConnectionStatus.simpellaNetPort = netPort;
@@ -68,9 +69,8 @@ public class Simpella {
 			fileDwPort = Integer.parseInt(args[1]);
 			SimpellaConnectionStatus.simpellaFileDownloadPort = fileDwPort;
 		}
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(SimpellaIPUtils.getLocalIPAddress().getHostAddress(),
-				SimpellaConnectionStatus.simpellaNetPort);
-		//TODO take second argument to be file server
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(
+					InetAddress.getLocalHost().getHostAddress(), netPort);
 		netSrv.setPort(netPort);
 		netSrv.start();
 		fileSrv.setPort(fileDwPort);
@@ -171,8 +171,34 @@ public class Simpella {
 						continue;
 					}
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
+					SimpellaFileShareDB fd = updateFilesandKbs();
+					
+					//set shared files data
+					int totalFiles = SimpellaConnectionStatus.getTotalFiles();
+					
+					if(totalFiles>prevSharedFiles){
+						totalFiles = totalFiles - prevSharedFiles;
+					}
+					else{
+						totalFiles = prevSharedFiles - totalFiles;
+					}
+					prevSharedFiles=fd.getNoOfFiles();
+					SimpellaConnectionStatus.setTotalFiles(totalFiles+fd.getNoOfFiles());
+					
+					int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
+					if(totalFilesSize>prevSharedFilesSize){
+						totalFilesSize = totalFilesSize - prevSharedFilesSize;
+					}else{
+						totalFilesSize = prevSharedFilesSize - totalFilesSize;
+					}
+					prevSharedFilesSize=fd.getSizeOfFiles();
+					SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+fd.getSizeOfFiles());
 				}
 			} else if (cmd_args[0].equals("scan")) {
+				if(SimpellaFileShareDB.sharedDirectory == null) {
+					System.out.println("No files shared in the system. Use share /path/to/shared/folder");
+					continue;
+				}
 				System.out.println("scanning " + SimpellaFileShareDB.sharedDirectory + " for files...");
 				SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
 				fileDb.scanSharedDirectory();
@@ -232,8 +258,8 @@ public class Simpella {
 							.getTotalFilesSize()));
 			System.out.println(info_fmt);
 		} else if (cmd[1].equalsIgnoreCase("c")) {
-			Formatter info_fmt = new Formatter();
 			for (int i = 0; i < SimpellaConnectionStatus.incomingConnectionCount; i++) {
+				Formatter info_fmt = new Formatter();
 				info_fmt.format(
 						"%-30s %-30s %-30s",
 						SimpellaConnectionStatus.incomingConnectionList[i]
@@ -305,7 +331,7 @@ public class Simpella {
 			System.out.println("DOWNLOAD STATS");
 			printDwnload=true;
 		} else if (cmd[1].equalsIgnoreCase("q")) {
-			System.out.println("Queries: "
+			System.out.println("Queries Received: "
 					+ SimpellaConnectionStatus.getQueriesRecvd() + "   "
 					+ "Responses sent: "
 					+ SimpellaConnectionStatus.getResponsesSent());
@@ -361,5 +387,11 @@ public class Simpella {
 		}	
 		
 		return;
+	}
+	public static SimpellaFileShareDB updateFilesandKbs(){
+		SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
+		fileDb.scanSharedDirectory();
+		return fileDb;
+
 	}
 }

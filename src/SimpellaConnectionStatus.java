@@ -1,10 +1,13 @@
+import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Hashtable;
+import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.Vector;
 
 public class SimpellaConnectionStatus {
 	public static int simpellaNetPort = 0;
 	public static int simpellaFileDownloadPort = 0;
+	public static byte[] servent_UUID;
 	public static int incomingConnectionCount = 0;
 	public static int outgoingConnectionCount = 0;
 	public static SimpellaStats[] incomingConnectionList = 
@@ -99,6 +102,10 @@ public class SimpellaConnectionStatus {
 		return totalFilesSize;
 	}
 
+	public static void setTotalPacketsSent() {
+		SimpellaConnectionStatus.totalPacketsSent++;
+	}
+
 	public static void setTotalFilesSize(int totalFilesSize) {
 		SimpellaConnectionStatus.totalFilesSize= totalFilesSize;
 	}
@@ -139,10 +146,6 @@ public class SimpellaConnectionStatus {
 		return totalPacketsSent;
 	}
 
-	public static void setTotalPacketsSent() {
-		SimpellaConnectionStatus.totalPacketsSent++;
-	}
-
 	public static int getTotalPacketsRecvd() {
 		return totalPacketsRecvd;
 	}
@@ -152,11 +155,8 @@ public class SimpellaConnectionStatus {
 	}
 	
 	public static int getTotalUniqueGUIds() {
-		return totalUniqueGUIds;
-	}
-
-	public static void setTotalUniqueGUIds(int totalUniqueGUIds) {
-		SimpellaConnectionStatus.totalUniqueGUIds = totalUniqueGUIds;
+		return SimpellaRoutingTables.generatedPingList.size()+SimpellaRoutingTables.generatedQueryList.size()+
+		SimpellaRoutingTables.PingTable.size()+SimpellaRoutingTables.QueryTable.size();
 	}
 
 	public static int getTotalHosts() {
@@ -174,8 +174,30 @@ public class SimpellaConnectionStatus {
 		outgoingConnectionCount = 0;
 		simpellaNetPort = 6346; //default port
 		simpellaFileDownloadPort = 5635; //default port
+		servent_UUID = SimpellaUtils.generateServentID(); // will be updated if the 
+														  //client is running on a diff port
 		}
 
+	public static ipConfig getNewHostFromGlobalTable() {
+		Iterator<ipConfig> itr = globalIpTable.iterator();
+		while (itr.hasNext()) {
+			ipConfig ipconf = itr.next();
+			try {
+				if(InetAddress.getByName(ipconf.getIpAddress()).isLoopbackAddress()) {
+					continue;
+				}
+			} catch (UnknownHostException e) {
+				System.out.println("Encountered error while resolving IP");
+				return null;
+			}
+			if(!isIPConnectionPresent(ipconf.getIpAddress())) {
+				return ipconf;
+			}
+		}
+		return null;
+		
+	}
+	
 	public static void checkAndAddIpToGlobalTable(String ip, int port){
 		ipConfig Ipcon = new ipConfig();
 		Ipcon.setIpAddress(ip);
@@ -194,6 +216,9 @@ public class SimpellaConnectionStatus {
 		if(!globalIpTable.containsKey(ip))
 		{
 			globalIpTable.put(ip, Integer.valueOf(port));
+			if(Simpella.debug){
+				System.out.println("Unique IP, incrementing host count. Host count = " + totalHosts);
+			}
 			totalHosts++;
 		}
 		else if(globalIpTable.containsKey(ip) && globalIpTable.get(ip)!=Integer.valueOf(port)){
@@ -208,6 +233,19 @@ public class SimpellaConnectionStatus {
 		for (int i = 0; i < 3; i++) {
 			if (incomingConnectionList[i].remoteIP.equals(inComingIP) // {
 					&& incomingConnectionList[i].remotePort == port) {
+				return true;
+			}
+		}
+		return false;
+	}
+	/*
+	 * Checks if the given IP is present in either the incoming tables of the out-
+	 * going tables
+	 */
+	public static boolean isIPConnectionPresent(String IP) {
+		for (int i = 0; i < 3; i++) {
+			if (incomingConnectionList[i].remoteIP.equals(IP) ||
+					outgoingConnectionList[i].remoteIP.equals(IP)) {
 				return true;
 			}
 		}
@@ -236,6 +274,9 @@ public class SimpellaConnectionStatus {
 
 	public static void delIncomingConnection(Socket clientSocket) {
 		for (int i = 0; i < 3; i++) {
+			if(incomingConnectionList[i].sessionSocket == null) {
+				continue;
+			}
 			if (incomingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				incomingConnectionList[i].remoteIP = "";
 				incomingConnectionList[i].remotePort = 0;
@@ -243,7 +284,9 @@ public class SimpellaConnectionStatus {
 				incomingConnectionCount--;
 				if(Simpella.debug) {
 					System.out
-						.println("Added connection to outgoingConnectionList");
+						.println("Removed connection from IN List, no of conections = " +
+								incomingConnectionCount);
+
 				}
 				return;
 			}
@@ -287,6 +330,9 @@ public class SimpellaConnectionStatus {
 
 	public static void delOutgoingConnection(Socket clientSocket) {
 		for (int i = 0; i < 3; i++) {
+			if(outgoingConnectionList[i].sessionSocket == null) {
+				continue;
+			}
 			if (outgoingConnectionList[i].sessionSocket.equals(clientSocket)) {
 				outgoingConnectionList[i].remoteIP = "";
 				outgoingConnectionList[i].remotePort = 0;
