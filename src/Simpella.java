@@ -171,6 +171,7 @@ public class Simpella {
 						continue;
 					}
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
+					/*
 					SimpellaFileShareDB fd = updateFilesandKbs();
 					
 					//set shared files data
@@ -193,6 +194,7 @@ public class Simpella {
 					}
 					prevSharedFilesSize=fd.getSizeOfFiles();
 					SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+fd.getSizeOfFiles());
+					*/
 				}
 			} else if (cmd_args[0].equals("scan")) {
 				if(SimpellaFileShareDB.sharedDirectory == null) {
@@ -238,6 +240,8 @@ public class Simpella {
 		byte[] pingPacket = pingH.getHeader();
 		SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
 		System.out.println("Sending Ping broadcast packets to all known connections");
+		String msgID = SimpellaRoutingTables.guidToString(pingPacket);
+		SimpellaRoutingTables.generatedPingList.add(msgID);
 		msgHandler.broadcastPing(pingPacket, null);
 	}
 

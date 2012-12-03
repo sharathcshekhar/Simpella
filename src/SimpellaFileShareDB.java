@@ -68,6 +68,10 @@ public class SimpellaFileShareDB {
 
 		File dir = new File(directory);
 		String[] files = dir.list();
+		/* if files are null, directory is empty */
+		if(files == null ) {
+			return;
+		}
 		for (int i = 0; i < files.length; i++) {
 			File filename = new File(directory, files[i]);
 			if (filename.isDirectory()) {
@@ -93,7 +97,7 @@ public class SimpellaFileShareDB {
 			if(file.isDirectory()) {
 				String result = recurssiveGetFile(file.getAbsolutePath(), filename, hashcode);
 				if(result != null)
-					return result;
+					return result; // else continue on the next iteration
 			} else {
 				if(file.getName().equals(filename)) {
 					if(file.hashCode() == hashcode) {

@@ -20,7 +20,6 @@ public class SimpellaConnectionStatus {
 	private static int totalFilesSize = 0;
 	private static int localFilesShared = 0;
 	private static int localFilesSharedSize = 0;
-	private static int totalUniqueGUIds = 0;
 	private static int totalPacketsSent = 0;
 	private static int totalPacketsRecvd = 0;
 	private static int totalBytesSent = 0;
