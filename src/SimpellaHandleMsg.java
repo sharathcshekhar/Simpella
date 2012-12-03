@@ -36,14 +36,18 @@ private SimpellaStats stats;
 				
 				SimpellaRoutingTables.insertPingTable(key, sessionSocket);
 				if ((header[17] > 1) && ((header[17] + header[18]) < 16)) {
+					if((header[17] + header[18]) != 7) {
+						header[17] = (byte) (7 - header[18]);
+					}
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
+					
 					broadcastPing(header, sessionSocket);
 					// Set TTL and hops to default values
 					header[17] = (byte) 0x07;
 					header[18] = (byte) 0x00; // Increment hops
 					sendPong(sessionSocket, header);
-				}
+				} // else drop the packet
 			}
 		} 
 		/*
@@ -143,6 +147,11 @@ private SimpellaStats stats;
 						//drop the packet if TTL limit has reached
 						return;
 					}
+				
+					if((header[17] + header[18]) != 7) {
+						header[17] = (byte) (7 - header[18]);
+					}
+				
 					DataOutputStream pongToClient = null;
 					try {
 						pongToClient = new DataOutputStream(
@@ -239,11 +248,16 @@ private SimpellaStats stats;
 				}
 				replyWithQueryHit(sessionSocket, searchString, header);
 
-				if (header[17] > 1) {
+				if ((header[17] > 1) && ((header[17] + header[18]) < 16)) {
+					
+					if((header[17] + header[18]) != 7) {
+						header[17] = (byte) (7 - header[18]);
+					}
+					
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
 					broadcastQuery(header, queryPayLoad, sessionSocket);
-				}
+				} // else drop the packet
 			}
 			
 		} 
@@ -370,10 +384,15 @@ private SimpellaStats stats;
 				}
 				header[17]--; // decrement TTL
 				header[18]++; // Increment hops
-				if (header[17] == 0) {
+				if ((header[17] == 0) || ((header[17] + header[18]) < 16)) {
 					//drop the packet
 					return;
 				}
+				
+				if((header[17] + header[18]) != 7) {
+						header[17] = (byte) (7 - header[18]);
+				}
+				
 				DataOutputStream queryHitToClient = null;
 				try {
 					queryHitToClient = new DataOutputStream(
