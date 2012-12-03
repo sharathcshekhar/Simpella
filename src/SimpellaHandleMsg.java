@@ -35,7 +35,7 @@ private SimpellaStats stats;
 			} else {
 				
 				SimpellaRoutingTables.insertPingTable(key, sessionSocket);
-				if (header[17] > 1) {
+				if ((header[17] > 1) && ((header[17] + header[18]) < 16)) {
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
 					broadcastPing(header, sessionSocket);
@@ -139,7 +139,7 @@ private SimpellaStats stats;
 							+ pongFwdSocket.getInetAddress().getHostAddress());
 					header[17]--; // decrement TTL
 					header[18]++; // Increment hops
-					if(header[17] == 0) {
+					if((header[17] == 0) || ((header[17] + header[18]) < 16)){
 						//drop the packet if TTL limit has reached
 						return;
 					}
@@ -640,6 +640,7 @@ private SimpellaStats stats;
 		// retain the msgID in query header in the query-hit header
 		queryHitHeader.setMsgId(queryHeader);
 		queryHitHeader.setMsgType("queryhit");
+		
 		SimpellaFileShareDB db = new SimpellaFileShareDB();
 		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
 
@@ -720,13 +721,16 @@ private SimpellaStats stats;
 
 				queryHitHeader.setPayLoadLength(offset);
 				queryHitHeaderBytes = queryHitHeader.getHeader();
+				//set TTL to query message hops + 2
+				queryHitHeaderBytes[17] = (byte) (queryHeader[18] + 2);
 				if (Simpella.debug) {
 					System.out
 							.println("offset in int " + offset + " 0:1:2:3 "
 									+ queryHitHeaderBytes[19]
 									+ queryHitHeaderBytes[20]
 									+ queryHitHeaderBytes[21]
-									+ queryHitHeaderBytes[22]);
+									+ queryHitHeaderBytes[22] + 
+									" TTL set to " + queryHitHeaderBytes[17]);
 					for (int k = 0; k < payLoadArray.length; k++) {
 						System.out.println("QueryHit: payLoadArray[" + k
 								+ "] = " + payLoadArray[k]);

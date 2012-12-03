@@ -36,4 +36,23 @@ public class SimpellaQueryResults {
 		this.port = port;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == null){
+			return false;
+		}
+		if(obj == this) {
+			return true;
+		}
+		SimpellaQueryResults result = (SimpellaQueryResults) obj;
+		if(result.ipAddress.equals(ipAddress) 	&&
+				result.port == port 			&&
+				result.fileName.equals(fileName)&&
+				result.file_size == file_size 	&&
+				result.file_index == file_index) {
+			return true;
+		}
+		return false;
+		
+	}
 }
