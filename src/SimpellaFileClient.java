@@ -14,7 +14,7 @@ public class SimpellaFileClient {
 	private String fileName;
 	private String serverIP;
 	private int serverPort;
-	
+	StringBuffer download_cmd;
 	public int getFileIndex() {
 		return fileIndex;
 	}
@@ -48,6 +48,24 @@ public class SimpellaFileClient {
 	}
 
 	public void downloadFile(int index) {
+		
+		class clientConnectionThread implements Runnable {
+			private Socket clientSocket;
+			public clientConnectionThread(Socket clientSocket) {
+				this.clientSocket = clientSocket;
+			}
+		public void run() {
+				try {
+					connectionListener(clientSocket);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
+		}
+		;
+		
 		Socket clientSocket = null;
 		this.fileIndex = SimpellaConnectionStatus.queryResults.get(index-1).file_index;
 		this.fileName = SimpellaConnectionStatus.queryResults.get(index-1).fileName;
@@ -60,9 +78,16 @@ public class SimpellaFileClient {
 		String host = "Host: "+SimpellaIPUtils.getLocalIPAddress().getHostAddress()+":"+SimpellaConnectionStatus.simpellaFileDownloadPort+"\r\n";
 		String connRange = "Connection: Keep-Alive\r\n" + "Range: bytes=0-\r\n"
 				+ "\r\n";
-		StringBuffer download_cmd = new StringBuffer(request + userAgent + host
-				+ connRange);
-			
+			download_cmd = new StringBuffer(request + userAgent + host
+					+ connRange);	
+		
+		Thread clienListner_t = new Thread(new clientConnectionThread(
+				clientSocket));
+		clienListner_t.start();
+			}
+	
+	private void connectionListener(Socket clientSocket) {
+		
 		try {
 			clientSocket = new Socket(serverIP, serverPort);
 		} catch (UnknownHostException e) {
@@ -70,7 +95,10 @@ public class SimpellaFileClient {
 		} catch (IOException e) {
 			System.out.println("Socket error during download");
 		}
-
+		
+		if(Simpella.debug) {
+			System.out.println("spawned a thread for file download!");
+		}
 		try {
 			DataOutputStream outToServer = new DataOutputStream(
 					clientSocket.getOutputStream());
@@ -85,6 +113,10 @@ public class SimpellaFileClient {
 		try {
 			clientSocket.getInputStream().read(readResp);
 			resp = new String(readResp);
+			if((null == resp)|| !resp.contains("200 OK")&& !resp.contains("503")){
+			System.out.println("There was an error during file download");	
+			return;
+			}
 			System.out.println("Response received : " + resp);
 		} catch (IOException e) {
 			System.out.println("Server Response Error");
@@ -92,7 +124,7 @@ public class SimpellaFileClient {
 		
 		StringTokenizer token = new StringTokenizer(resp, "\r\n");
 		
-		int fileLen = 0;
+		long fileLen = 0;
 		while (token.hasMoreElements()) {
 			String eachToken[] = token.nextToken().split(":");
 			for (String each : eachToken) {
@@ -104,25 +136,38 @@ public class SimpellaFileClient {
 		}
 		
 		FileOutputStream fo = null;
-		File tmpFile = new File(fileName+"_temp");
-		File newFile = new File(fileName);
+		File tmpFile = null;
+		String dir = SimpellaFileShareDB.sharedDirectory;
+		DataOutputStream out = null;
+		File newFile = null;
+		if(null!=dir){
+			newFile = new File(dir+"/"+fileName);
+			tmpFile =  new File(dir+"/"+fileName+"_temp");
+		}
+		else{
+			newFile = new File(fileName);
+			tmpFile =  new File(fileName+"_temp");				
+		}
+		
 		try {
 			fo = new FileOutputStream(tmpFile);
+			out = new DataOutputStream(fo);
 		} catch (FileNotFoundException e1) {
 			System.out.println("Error while downloading file");
 		}
-		DataOutputStream out = new DataOutputStream(fo);
+
 		byte[] readData = new byte[1024];
 		int i = 0;
-		int filedownloaded = 0;
+		long filedownloaded = 0;
 		try {
 			while (!((i = clientSocket.getInputStream().read(readData, 0, 1024)) == -1)) {
 				filedownloaded+=i;
 				if(Simpella.printDwnload){
+					System.out.println(" ");
 					Formatter info_fmt = new Formatter();
 					info_fmt.format("%-15s %-24s %-50s %-100s\n", "Client", "Percentage", "Size", "Name");
-					info_fmt.format("%-15s %-24f %-50s %-100s\n", serverIP+":"+Integer.toString(serverPort), 
-							Float.toString((float)((float)(filedownloaded*100)/(float)fileLen)),
+					info_fmt.format("%-15s %-24s %-50s %-100s\n", serverIP+":"+Integer.toString(serverPort), 
+							Float.toString((float)(((double)(filedownloaded*100))/((double)fileLen)))+"%",
 							SimpellaUtils.memFormat(filedownloaded)+"/"+SimpellaUtils.memFormat(fileLen),
 							fileName);
 					System.out.println(info_fmt);
@@ -134,6 +179,7 @@ public class SimpellaFileClient {
 		} catch (IOException e) {
 			System.out.println("Error while downloading file");
 		}
+		//delete to if exists to rename it
 		newFile.delete();
 		// rename file
 		/*if (!tmpFile.renameTo(newFile)) {
@@ -146,10 +192,12 @@ public class SimpellaFileClient {
 			if (!tmpFile.renameTo(newFile)) {
 				System.out.println("File already exists");
 				return;
-			}
+			} 
 		} catch (IOException e) {
 			System.out.println("Sockets closed abruplty");
 		}
+
+		
 	}
 
 }

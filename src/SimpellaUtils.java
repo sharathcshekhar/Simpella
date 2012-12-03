@@ -6,8 +6,6 @@ import java.text.DecimalFormat;
 import java.util.Random;
 import java.util.UUID;
 
-
-
 public class SimpellaUtils {
 	static Random r = new SecureRandom();
 	public static void getR(byte[] head) {

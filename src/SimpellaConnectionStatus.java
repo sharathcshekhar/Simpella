@@ -154,11 +154,8 @@ public class SimpellaConnectionStatus {
 	}
 	
 	public static int getTotalUniqueGUIds() {
-		return totalUniqueGUIds;
-	}
-
-	public static void setTotalUniqueGUIds(int totalUniqueGUIds) {
-		SimpellaConnectionStatus.totalUniqueGUIds = totalUniqueGUIds;
+		return SimpellaRoutingTables.generatedPingList.size()+SimpellaRoutingTables.generatedQueryList.size()+
+		SimpellaRoutingTables.PingTable.size()+SimpellaRoutingTables.QueryTable.size();
 	}
 
 	public static int getTotalHosts() {

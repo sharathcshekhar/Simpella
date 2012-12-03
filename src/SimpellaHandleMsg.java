@@ -33,9 +33,7 @@ private SimpellaStats stats;
 				System.out.println("Ping message seen before or self ping, ignoring");
 				return;
 			} else {
-				//set the count of total unique IDs
-				 int uniqueId =  SimpellaConnectionStatus.getTotalUniqueGUIds();
-				 SimpellaConnectionStatus.setTotalUniqueGUIds(++uniqueId);
+				
 				SimpellaRoutingTables.insertPingTable(key, sessionSocket);
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
@@ -117,7 +115,6 @@ private SimpellaStats stats;
 				SimpellaConnectionStatus.setTotalFiles(totalFiles+no_of_file_shared);
 				int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
 				SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+size_shared);
-				
 				if(SimpellaConnectionStatus.outgoingConnectionCount < 2) {
 				/* try to maintain at least 2 outgoing connections
 				 * connect only to unique IPs, check if the IP from where
@@ -215,9 +212,6 @@ private SimpellaStats stats;
 			} else {
 				SimpellaRoutingTables.insertQueryTable(queryid, sessionSocket);
 				SimpellaConnectionStatus.setQueriesRecvd();
-				//set the count of total unique IDs
-				int uniqueId =  SimpellaConnectionStatus.getTotalUniqueGUIds();
-				SimpellaConnectionStatus.setTotalUniqueGUIds(++uniqueId);
 				
 				//set received bytes and packs size
 				stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
@@ -712,7 +706,6 @@ private SimpellaStats stats;
 						filename.length() + 1);
 				offset += filename.length() + 1;
 			}
-			
 			byte[] serventID = SimpellaConnectionStatus.servent_UUID;
 			payLoad.write(serventID, 0, 16);
 			offset += 16;

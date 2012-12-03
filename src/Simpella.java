@@ -28,7 +28,8 @@ public class Simpella {
 	private static boolean FIND_flag = false;
 	private static boolean MONITOR_flag = false;
 	public static boolean printDwnload = false;
-	
+	public static int prevSharedFiles = 0;
+	public static int prevSharedFilesSize = 0;
 	public static synchronized void setFINDFlag() {
 		FIND_flag = true;
 	}
@@ -170,6 +171,28 @@ public class Simpella {
 						continue;
 					}
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
+					SimpellaFileShareDB fd = updateFilesandKbs();
+					
+					//set shared files data
+					int totalFiles = SimpellaConnectionStatus.getTotalFiles();
+					
+					if(totalFiles>prevSharedFiles){
+						totalFiles = totalFiles - prevSharedFiles;
+					}
+					else{
+						totalFiles = prevSharedFiles - totalFiles;
+					}
+					prevSharedFiles=fd.getNoOfFiles();
+					SimpellaConnectionStatus.setTotalFiles(totalFiles+fd.getNoOfFiles());
+					
+					int totalFilesSize = SimpellaConnectionStatus.getTotalFilesSize();
+					if(totalFilesSize>prevSharedFilesSize){
+						totalFilesSize = totalFilesSize - prevSharedFilesSize;
+					}else{
+						totalFilesSize = prevSharedFilesSize - totalFilesSize;
+					}
+					prevSharedFilesSize=fd.getSizeOfFiles();
+					SimpellaConnectionStatus.setTotalFilesSize(totalFilesSize+fd.getSizeOfFiles());
 				}
 			} else if (cmd_args[0].equals("scan")) {
 				if(SimpellaFileShareDB.sharedDirectory == null) {
@@ -303,7 +326,7 @@ public class Simpella {
 			System.out.println("DOWNLOAD STATS");
 			printDwnload=true;
 		} else if (cmd[1].equalsIgnoreCase("q")) {
-			System.out.println("Queries: "
+			System.out.println("Queries Received: "
 					+ SimpellaConnectionStatus.getQueriesRecvd() + "   "
 					+ "Responses sent: "
 					+ SimpellaConnectionStatus.getResponsesSent());
@@ -359,5 +382,11 @@ public class Simpella {
 		}	
 		
 		return;
+	}
+	public static SimpellaFileShareDB updateFilesandKbs(){
+		SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
+		fileDb.scanSharedDirectory();
+		return fileDb;
+
 	}
 }
