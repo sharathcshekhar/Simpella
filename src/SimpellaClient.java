@@ -34,6 +34,7 @@ public class SimpellaClient {
 			System.out.println("Error: Outgoing connection Limit reached");
 			return 1;
 		}
+
 		if(SimpellaConnectionStatus.isOutConnectionPresent(connectionIP, connectionPort)) {
 			 System.out.println("Connection to the Simpella Servent already present");
 			 return 1;

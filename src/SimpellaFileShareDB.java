@@ -60,30 +60,29 @@ public class SimpellaFileShareDB {
 
 	/*Private helper functions*/
 	
-	void recurssiveScanDir(String directory)
-	{
+	void recurssiveScanDir(String directory) {
 		if (directory == null) {
 			System.out.println("No directory is shared!");
 			return;
 		}
+
 		File dir = new File(directory);
 		String[] files = dir.list();
-		for (int i = 0; i < files.length; i++){
+		for (int i = 0; i < files.length; i++) {
 			File filename = new File(directory, files[i]);
-			if(filename.isDirectory()) {
+			if (filename.isDirectory()) {
 				recurssiveScanDir(filename.toString());
 			} else {
-				if(Simpella.debug) {
-					System.out.println("File scanned = " + filename.getName() + 
-							" size = " + filename.length() + 
-							" full path = " + filename.getAbsolutePath());
+				if (Simpella.debug) {
+					System.out.println("File scanned = " + filename.getName()
+							+ " size = " + filename.length() + " full path = "
+							+ filename.getAbsolutePath());
 				}
-				noOfFiles ++;
-				sizeOfFiles = sizeOfFiles + (int)filename.length();
+				noOfFiles++;
+				sizeOfFiles = sizeOfFiles + (int) filename.length();
 			}
 		}
 	}
-
 	
 	String recurssiveGetFile(String rootDirectory, String filename, int hashcode) {
 		File dir = new File(rootDirectory);

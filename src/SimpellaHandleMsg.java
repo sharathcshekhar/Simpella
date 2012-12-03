@@ -62,6 +62,7 @@ private SimpellaStats stats;
 			int payLoadLen = SimpellaUtils.byteArrayToInt(pong_tmp_buf);
 			
 			byte[] pongPayLoad = new byte[14];
+
 			int len;
 			try {
 				len = inFromClient.read(pongPayLoad, 0, 14);
@@ -111,7 +112,6 @@ private SimpellaStats stats;
 							+ " size = " + size_shared);
 				}			
 				//add if unique ip to global list
-
 				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(ip, port_number);
 				//set shared files data
 				int totalFiles = SimpellaConnectionStatus.getTotalFiles();
@@ -531,6 +531,7 @@ private SimpellaStats stats;
 		Socket clientSocket = null;
 		String clientIP = "";
 		byte[] queryPacket = SimpellaHeader.getSimpellaPacket(header, queryPayLoad);
+
 		if (Simpella.debug) {
 			System.out.println("In broadcast query with packet Length = "
 					+ queryPayLoad.length);
@@ -552,6 +553,7 @@ private SimpellaStats stats;
 				if ((sender == null)
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
+
 					if (Simpella.debug) {
 						System.out.println("broadcast incoming " + clientIP
 								+ " port = " + clientPort);
@@ -728,6 +730,7 @@ private SimpellaStats stats;
 								+ "] = " + payLoadArray[k]);
 					}
 				}
+
 				queryHPacket = SimpellaHeader.getSimpellaPacket(
 						queryHitHeaderBytes, payLoadArray);
 

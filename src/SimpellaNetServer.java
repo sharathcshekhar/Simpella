@@ -87,9 +87,6 @@ public class SimpellaNetServer {
 		while (status) {
 			try {
 				clientSocket = SimpellaTCP.accept();	
-				//add if unique ip to global list
-				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(clientSocket.getInetAddress().getHostAddress(),
-						clientSocket.getPort());
 			} catch (IOException e) {
 				System.out.println("Accept failed at " + tcpServerPort);
 				continue;

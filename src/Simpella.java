@@ -57,8 +57,6 @@ public class Simpella {
 		SimpellaConnectionStatus.ConnectionStatusInit();
 		int netPort = SimpellaConnectionStatus.simpellaNetPort;
 		int fileDwPort = SimpellaConnectionStatus.simpellaFileDownloadPort;
-		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(LOCAL_IP, netPort);
-		
 		if(args.length == 1) {
 			netPort = Integer.parseInt(args[0]);
 			SimpellaConnectionStatus.simpellaNetPort = netPort;
@@ -71,8 +69,7 @@ public class Simpella {
 			fileDwPort = Integer.parseInt(args[1]);
 			SimpellaConnectionStatus.simpellaFileDownloadPort = fileDwPort;
 		}
-		
-		//TODO take second argument to be file server
+		SimpellaConnectionStatus.checkAndAddIpToGlobalTable(LOCAL_IP, netPort);//TODO take second argument to be file server
 		netSrv.setPort(netPort);
 		netSrv.start();
 		fileSrv.setPort(fileDwPort);
@@ -264,7 +261,8 @@ public class Simpella {
 				System.out.println(info_fmt);
 			}
 			for (int i = 0; i < SimpellaConnectionStatus.outgoingConnectionCount; i++) {
-				info_fmt.format(
+				Formatter info_fmt_2 = new Formatter();
+				info_fmt_2.format(
 						"%-30s %-30s %-30s",
 						SimpellaConnectionStatus.outgoingConnectionList[i]
 								.getRemoteIP()
@@ -285,7 +283,7 @@ public class Simpella {
 								+ SimpellaUtils
 										.memFormat(SimpellaConnectionStatus.outgoingConnectionList[i]
 												.getRecvdBytes()));
-				System.out.println(info_fmt);
+				System.out.println(info_fmt_2);
 			}
 
 		} else if (cmd[1].equalsIgnoreCase("n")) {
