@@ -124,7 +124,9 @@ public class Simpella {
 			} else if (cmd_args[0].equals("find")) {
 				System.out.println("find command");
 				setFINDFlag();
-				find(cmd_args[1]);
+				String userTxt = usrInput.substring(usrInput
+                        .indexOf(" ") + 1);
+				find(userTxt);
 				//wait until user presses enter
 				cmdFromUser.readLine();
 				clearFINDFlag();

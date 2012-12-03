@@ -1,8 +1,10 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class SimpellaClient {
 	SimpellaStats simpellaStats;
@@ -29,7 +31,18 @@ public class SimpellaClient {
 			System.out.println("Error: Outgoing connection Limit reached");
 			return 1;
 		}
-
+		//convert connectionIP to IP and send
+		//TODO test code, to be moved to Simpella.java
+		String ip_afterConversion = null;
+		try {
+			ip_afterConversion = InetAddress.getByName(connectionIP).getHostAddress();
+		 
+			System.out.println("connectionIP = " + connectionIP + " afterConversion = " + ip_afterConversion 
+				+ " Is loopback connection? " + InetAddress.getByName(connectionIP).isLoopbackAddress());
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		if(SimpellaConnectionStatus.isOutConnectionPresent(connectionIP, connectionPort)) {
 			 System.out.println("Connection to the Simpella Servent already present");
 			 return 1;
@@ -58,14 +71,17 @@ public class SimpellaClient {
 				if(Simpella.debug) {
 					System.out
 						.println("Connection successfully accepted, no. of connections = "
-								+ SimpellaConnectionStatus.outgoingConnectionCount);
+								+ SimpellaConnectionStatus.outgoingConnectionCount +
+								" New connection from " + clientSocket.getLocalAddress().getHostAddress() +
+								":" + clientSocket.getLocalPort() + " to " + 
+								clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
 				}
 				ret = 0;
 				System.out.println(S.substring(17, len - 2));
 				//Acknowledge the connection and complete the 3 way handshake.
 				outToServer.write(S.getBytes());
 				//add if unique ip to global list
-				SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP,connectionPort);
+			//	SimpellaConnectionStatus.checkAndAddIpToGlobalTable(connectionIP,connectionPort);
 				//Spawn a thread to handle the connection
 				Thread clienListner_t = new Thread(new clientConnectionThread(
 						clientSocket));
