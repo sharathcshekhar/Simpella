@@ -233,15 +233,7 @@ private SimpellaStats stats;
 				if (Simpella.debug || Simpella.is_MONITORActive()) {
 					System.out.println("Search: " + searchString);
 				}
-				/*
-				 * Crude way of setting GUID 
-				 * TODO make it more elegant
-				 */
-				try {
-					replyWithQueryHit(sessionSocket, searchString, header);
-				} catch (IOException e) {
-					System.out.println("Failed to send query hit, dropping the packet");
-				}
+				replyWithQueryHit(sessionSocket, searchString, header);
 
 				if (header[17] > 1) {
 					header[17]--; // decrement TTL
@@ -632,11 +624,10 @@ private SimpellaStats stats;
 				}
 			}
 		}
-		
 	}
 
 	public void replyWithQueryHit(Socket sessionSocket,
-			String searchString, byte[] queryHeader) throws IOException {
+			String searchString, byte[] queryHeader) {
 		
 		SimpellaHeader queryHitHeader = new SimpellaHeader();
 		queryHitHeader.initializeHeader();
@@ -716,35 +707,39 @@ private SimpellaStats stats;
 			offset += 16;
 			byte[] payLoadArray = new byte[offset];
 			payLoadArray = payLoad.toByteArray();
-			DataOutputStream outToClient = new DataOutputStream(
-					sessionSocket.getOutputStream());
-			queryHitHeader.setPayLoadLength(offset);
-			byte[] queryHitHeaderBytes = queryHitHeader.getHeader();
-			/*
-			byte[] payLoadLength = SimpellaUtils.toBytes(offset);
-			queryHitHeaderBytes[19] = payLoadLength[0];
-			queryHitHeaderBytes[20] = payLoadLength[1];
-			queryHitHeaderBytes[21] = payLoadLength[2];
-			queryHitHeaderBytes[22] = payLoadLength[3];
-			*/
-			if(Simpella.debug) {
-				System.out.println("offset in int " + offset + " 0:1:2:3 " +  queryHitHeaderBytes[19] +
-						queryHitHeaderBytes[20] +  queryHitHeaderBytes[21] +  queryHitHeaderBytes[22]);
-				for (int k = 0; k < payLoadArray.length; k++) {
-					System.out.println("QueryHit: payLoadArray[" + k + "] = "
-							+ payLoadArray[k]);
+			DataOutputStream outToClient;
+			byte[] queryHitHeaderBytes;
+			byte[] queryHPacket;
+			try {
+				outToClient = new DataOutputStream(
+						sessionSocket.getOutputStream());
+
+				queryHitHeader.setPayLoadLength(offset);
+				queryHitHeaderBytes = queryHitHeader.getHeader();
+				if (Simpella.debug) {
+					System.out
+							.println("offset in int " + offset + " 0:1:2:3 "
+									+ queryHitHeaderBytes[19]
+									+ queryHitHeaderBytes[20]
+									+ queryHitHeaderBytes[21]
+									+ queryHitHeaderBytes[22]);
+					for (int k = 0; k < payLoadArray.length; k++) {
+						System.out.println("QueryHit: payLoadArray[" + k
+								+ "] = " + payLoadArray[k]);
+					}
 				}
+				queryHPacket = SimpellaHeader.getSimpellaPacket(
+						queryHitHeaderBytes, payLoadArray);
+
+				outToClient.write(queryHPacket);
+			} catch (IOException e) {
+				System.out.println("Connection has closed abruptly, cannot sent Query-hit, closing connection");
+				return;
 			}
-			byte[] queryHPacket = SimpellaHeader.getSimpellaPacket(queryHitHeaderBytes, payLoadArray); 
-			// write header
-			// outToClient.write(queryHitHeaderBytes, 0, 23);
-			// write payload
-			//  outToClient.write(payLoadArray, 0, offset);
-			outToClient.write(queryHPacket);
 			//set bit and pack for info command
 			stats = SimpellaConnectionStatus.getBySocket(sessionSocket);
-			if(null!=stats){
-				stats.setSentBytes(payLoadArray.length+queryHitHeaderBytes.length);
+			if (null != stats) {
+				stats.setSentBytes(payLoadArray.length + queryHitHeaderBytes.length);
 				stats.setSentPacks();
 				SimpellaConnectionStatus.setTotalBytesSent(payLoadArray.length+queryHitHeaderBytes.length);
 				SimpellaConnectionStatus.setTotalPacketsSent();
@@ -752,7 +747,7 @@ private SimpellaStats stats;
 		}
 	}
 	
-	public void sendPing(Socket clientSocket) throws Exception
+	public void sendPing(Socket clientSocket)
 	{
 		SimpellaHeader pingH = new SimpellaHeader();
 		pingH.setMsgType("ping");
@@ -763,9 +758,16 @@ private SimpellaStats stats;
 		if(Simpella.debug) {
 			System.out.println("Pinged with Header = " + Arrays.toString(pingH.getHeader()));
 		}
-		DataOutputStream outToServer = new DataOutputStream(
-				clientSocket.getOutputStream());
-		outToServer.write(pingH.getHeader());
+		DataOutputStream outToServer;
+		try {
+			outToServer = new DataOutputStream(
+					clientSocket.getOutputStream());
+		
+			outToServer.write(pingH.getHeader());
+		} catch (IOException e) {
+			System.out.println("Connection has closed abruptly cannot sent Ping, closing connection");
+			return;
+		}
 		//set bit and pack for info command
 		stats = SimpellaConnectionStatus.getBySocket(clientSocket);
 		if(null!=stats){
