@@ -274,7 +274,19 @@ private SimpellaStats stats;
 			qHit_tmp_buffer[2] = header[21];
 			qHit_tmp_buffer[3] = header[22];
 			int payLoadLen = SimpellaUtils.byteArrayToInt(qHit_tmp_buffer);
-			
+			if(payLoadLen > 4096) {
+			/*
+			 * if payload is > 4Kb, drop the packet and 
+			 * consume the bytes
+			 */
+				try {
+					inFromClient.skip(payLoadLen);
+				} catch (IOException e) {
+					System.out.println("Error while dropping the packet.");
+				}
+				System.out.println("Packet too big, dropping..");
+				return;
+			}
 			byte[] queryHitPayLoad = new byte[payLoadLen];
 			int len;
 			try {
@@ -661,7 +673,12 @@ private SimpellaStats stats;
 		
 		SimpellaFileShareDB db = new SimpellaFileShareDB();
 		ArrayList<Object> searchResults = db.getMatchingFiles(searchString);
-
+		if(searchResults == null) {
+			if(Simpella.debug) {
+				System.out.println("No directory shared, returning");
+			}
+			return;
+		}
 		if(Simpella.debug) {
 			System.out.println("In replyWithQuery, searchString " + searchString);
 			Iterator<Object> itr1 = searchResults.iterator();
@@ -683,11 +700,15 @@ private SimpellaStats stats;
 
 		if (!searchResults.isEmpty()) {
 			SimpellaConnectionStatus.setResponsesSent();
-			
 			byte[] tmp = new byte[4];
 			int offset = 0;
 			// write no. of files to 1st byte
-			tmp[0] = (byte) (searchResults.size() / 3);
+			if((searchResults.size()/3) > 255) {
+				System.out.println("Too many files, sending partial Packet");
+				tmp[0] = (byte)255;
+			} else {
+				tmp[0] = (byte) (searchResults.size() / 3);
+			}	
 			payLoad.write(tmp, 0, 1);
 			offset += 1;
 			// byte 1-2 is file download Port
@@ -707,12 +728,23 @@ private SimpellaStats stats;
 			tmp = SimpellaUtils.toBytes(10000);
 			payLoad.write(tmp, 0, 4);
 			offset += 4;
-
+			int no_of_files_sent = 0;
+			boolean packet_incomplete = false;
 			while (itr.hasNext()) {
 				Integer fileIndex = (Integer) itr.next();
 				Long size = (Long) itr.next();
 				String filename = (String) itr.next();
-
+				
+				if (offset > (4096 - 16 - 8 - filename.length() + 1)) {
+					/*
+					 * send partial results only 
+					 * if value is exceeding 4K limit
+					 */
+					System.out.println("Cannot handle packets greater the 4K, sending partial results");
+					packet_incomplete = true;
+					break;
+				}
+				
 				tmp = SimpellaUtils.toBytes(fileIndex.intValue());
 				payLoad.write(tmp, 0, 4);
 				offset += 4;
@@ -724,10 +756,25 @@ private SimpellaStats stats;
 				payLoad.write((filename + '\0').getBytes(), 0,
 						filename.length() + 1);
 				offset += filename.length() + 1;
+				no_of_files_sent++;
+				
+				if (no_of_files_sent == 255){
+					System.out.println("Sending partial Packet");
+					break;
+				}
+				
 			}
 			byte[] serventID = SimpellaConnectionStatus.servent_UUID;
 			payLoad.write(serventID, 0, 16);
 			offset += 16;
+			
+			if(packet_incomplete) {
+				System.out.println("Sending partial Packet");
+				payLoad.reset();
+				tmp[0] = (byte) no_of_files_sent;
+				payLoad.write(tmp, 0, 1);
+			}
+			
 			byte[] payLoadArray = new byte[offset];
 			payLoadArray = payLoad.toByteArray();
 			DataOutputStream outToClient;

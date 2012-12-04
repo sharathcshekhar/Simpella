@@ -49,8 +49,11 @@ public class SimpellaFileShareDB {
 			}
 		}
 		//Hashtable<Integer, String> results = recurssiveFileSearch(keys, sharedDirectory);
-		ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
-		return results;
+		if(sharedDirectory != null) { 
+			ArrayList<Object> results = recurssiveFileSearch(keys, sharedDirectory);
+			return results;
+		}
+		return null;
 	}
 	/* Will return null if the file index/filename pair does not match */
 	public String getFullFilePath(String filename, int hashcode) {
