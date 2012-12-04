@@ -109,7 +109,6 @@ public class SimpellaFileClient {
 			System.out.println("Error during sending request to server");
 		}
 
-		byte[] readResp = new byte[512];
 		String resp = null;
 		int no_of_CR_LF = 0;
 		int no_of_bytesRead = 0;
@@ -130,8 +129,6 @@ public class SimpellaFileClient {
 			}
 			byte[] http_header = msg.toByteArray();
 			resp = new String(http_header);
-			//clientSocket.getInputStream().read(readResp);
-			//resp = new String(readResp);
 			
 			if((null == resp)|| !resp.contains("200 OK")&& 
 					!resp.contains("503")){
@@ -163,23 +160,23 @@ public class SimpellaFileClient {
 		DataOutputStream out = null;
 		File newFile = null;
 		String tmpName = "tmp" + fileName;
-		if(null!=dir){
-			newFile = new File(dir+"/"+fileName);
-			tmpFile =  new File(dir+"/"+fileName+"_temp");
+		try{
+			if(null!=dir){
+				newFile = new File(dir+"/"+fileName);
+				tmpFile =  new File(dir+"/"+tmpName);
+			}
+			
+			else{
+				newFile = new File(fileName);
+				tmpFile =  new File(tmpName);				
+			}
+		}catch(NullPointerException npe){
+			System.out.println("File not found");
 		}
-		
-		else{
-			newFile = new File("works");
-			tmpFile =  new File(tmpName);				
-		}
-		//System.out.println("filename to write = " + tmpFil);
-		//try {
-		//	tmpFile.createNewFile();
-	//	} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			//e2.printStackTrace();
-	//	}
+		if(Simpella.debug){
 		System.out.println("Filename = " + tmpFile.getAbsolutePath());
+		}
+
 		try {
 			fo = new FileOutputStream(tmpFile);
 			out = new DataOutputStream(fo);
@@ -192,7 +189,9 @@ public class SimpellaFileClient {
 		long filedownloaded = 0;
 		try {
 			while (!((i = clientSocket.getInputStream().read(readData, 0, 1024)) == -1)) {
-			//	System.out.println("Reading cycle " + i);
+				if(Simpella.debug){
+				System.out.println("Reading cycle " + i);
+				}
 				filedownloaded+=i;
 				if(Simpella.printDwnload){
 					System.out.println(" ");
@@ -211,13 +210,6 @@ public class SimpellaFileClient {
 		} catch (IOException e) {
 			System.out.println("Error while downloading file");
 		}
-		//delete to if exists to rename it
-		//newFile.delete();
-		// rename file
-		/*if (!tmpFile.renameTo(newFile)) {
-			System.out.println("File already exists");
-			return;
-		}*/
 		
 		try {
 			out.flush();
@@ -237,7 +229,6 @@ public class SimpellaFileClient {
 			System.out.println("Sockets closed abruplty");
 		}
 		return;
-		
 	}
 
 }

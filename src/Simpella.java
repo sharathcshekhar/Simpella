@@ -168,6 +168,7 @@ public class Simpella {
 				}
 				
 			} else if (cmd_args[0].equals("find")) {
+
 				if(cmd_args.length == 1 ){
 					System.out.println("find needs arguments. Usage: find 'text to search'");
 					continue;
@@ -175,7 +176,7 @@ public class Simpella {
 				setFINDFlag();
 				String userTxt = usrInput.substring(usrInput
                        .indexOf(" ") + 1);
-								find(userTxt);
+				find(userTxt);
 				//wait until user presses enter
 				try {
 					cmdFromUser.readLine();
