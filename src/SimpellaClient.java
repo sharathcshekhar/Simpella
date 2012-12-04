@@ -113,7 +113,9 @@ public class SimpellaClient {
 		int len = 0;
 		SimpellaHandleMsg msgHandler = new SimpellaHandleMsg();
 		// send ping to the new connection	
-		System.out.println("Sending ping message");
+		if(Simpella.debug) {
+			System.out.println("Sending ping message");
+		}
 		msgHandler.sendPing(sessionSocket);
 	
 		while (true) {

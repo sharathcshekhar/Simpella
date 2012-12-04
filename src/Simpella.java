@@ -99,8 +99,10 @@ public class Simpella {
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
-		System.out.println("Local IP : " + LOCAL_IP + "\nSimpella Net Port: " + netPort + "\nDownloading Port: " +
+		if(Simpella.debug){
+			System.out.println("Local IP : " + LOCAL_IP + "\nSimpella Net Port: " + netPort + "\nDownloading Port: " +
 				fileDwPort + "\nsimpella version 0.6 (c) University at Buffalo, 2012");
+		}
 		while (true) {
 			System.out.print("Simpella> ");
 			String usrInput = null;
@@ -471,7 +473,9 @@ public class Simpella {
 			} catch (IOException e) {
 				System.out.println("Error while sending query");
 			}
-			System.out.println("In initialize query. Writing a payLoad of " + payLoad.size());
+			if(Simpella.debug) {
+				System.out.println("In initialize query. Writing a payLoad of " + payLoad.size());
+			}
 			String guid = SimpellaRoutingTables.guidToString(queryHeader);
 			SimpellaRoutingTables.generatedQueryList.add(guid);
 			

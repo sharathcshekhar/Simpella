@@ -183,7 +183,9 @@ private SimpellaStats stats;
 		 * Handle QUERY message 
 		 */
 		else if (header[16] == (byte) 0x80) {
-			System.out.println("Query-message");
+			if(Simpella.debug) {
+				System.out.println("Query-message");
+			}
 			byte[] tmp = new byte[4];
 			tmp[0] = header[19];
 			tmp[1] = header[20];
@@ -314,7 +316,9 @@ private SimpellaStats stats;
 			String guid = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.generatedQueryList.contains(guid)) {
 				
-				System.out.println("Recived Query-hit for me! :)");
+				if(Simpella.debug) {
+					System.out.println("Recived Query-hit for me! :)");
+				}
 				ByteArrayInputStream msg = new ByteArrayInputStream(queryHitPayLoad);
 				int no_of_files = msg.read();
 				qHit_tmp_buffer[0] = (byte) 0x00;
@@ -435,7 +439,9 @@ private SimpellaStats stats;
 
 	public void sendPong(Socket clientSocket, byte[] header) {
 		// Reply with a pong on ping
-		System.out.println("Sending pong");
+		if(Simpella.debug) {
+			System.out.println("Sending pong");
+		}
 		byte[] pongPacket = new byte[37];
 		// copy 23 bytes from header, starting at 0,
 		// to pongPacket, from position 0
@@ -477,7 +483,9 @@ private SimpellaStats stats;
 	public void broadcastPing(byte[] pingMsg, Socket sender) {
 		Socket clientSocket = null;
 		String clientIP = "";
-		System.out.println("In broadcast ping");
+		if(Simpella.debug) {
+			System.out.println("In broadcast ping");
+		}
 		for (int i = 0; i < 3; i++) {
 
 			clientSocket = SimpellaConnectionStatus.incomingConnectionList[i].sessionSocket;
@@ -489,8 +497,10 @@ private SimpellaStats stats;
 						|| !((sender.getInetAddress().getHostAddress()
 								.equals(clientIP)) && (sender.getPort() == clientPort))) {
 					/* send to everyone apart from this node */
-					System.out.println("sending ping to IP: " + clientIP
+					if(Simpella.debug){
+						System.out.println("sending ping to IP: " + clientIP
 							+ " Port = " + clientPort);
+					}
 					DataOutputStream outToServents;
 					try {
 						outToServents = new DataOutputStream(
