@@ -759,7 +759,7 @@ private SimpellaStats stats;
 				no_of_files_sent++;
 				
 				if (no_of_files_sent == 255){
-					System.out.println("Sending partial Packet");
+					System.out.println("Sending partial Packet, 255 file sie limit reached");
 					break;
 				}
 				
@@ -767,16 +767,15 @@ private SimpellaStats stats;
 			byte[] serventID = SimpellaConnectionStatus.servent_UUID;
 			payLoad.write(serventID, 0, 16);
 			offset += 16;
+				
+			byte[] payLoadArray = new byte[offset];
+			payLoadArray = payLoad.toByteArray();
 			
 			if(packet_incomplete) {
 				System.out.println("Sending partial Packet");
-				payLoad.reset();
-				tmp[0] = (byte) no_of_files_sent;
-				payLoad.write(tmp, 0, 1);
+				payLoadArray[0] = (byte)no_of_files_sent;
 			}
 			
-			byte[] payLoadArray = new byte[offset];
-			payLoadArray = payLoad.toByteArray();
 			DataOutputStream outToClient;
 			byte[] queryHitHeaderBytes;
 			byte[] queryHPacket;
