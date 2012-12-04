@@ -99,10 +99,9 @@ public class Simpella {
 		BufferedReader cmdFromUser = new BufferedReader(new InputStreamReader(
 				System.in));
 		// CLI begins
-		if(Simpella.debug){
-			System.out.println("Local IP : " + LOCAL_IP + "\nSimpella Net Port: " + netPort + "\nDownloading Port: " +
+		System.out.println("Local IP : " + LOCAL_IP + "\nSimpella Net Port: " + netPort + "\nDownloading Port: " +
 				fileDwPort + "\nsimpella version 0.6 (c) University at Buffalo, 2012");
-		}
+		
 		while (true) {
 			System.out.print("Simpella> ");
 			String usrInput = null;
@@ -139,7 +138,8 @@ public class Simpella {
 					}
                     ip_afterConversion = InetAddress.getByName(connectionIP).getHostAddress();
                     if(Simpella.debug){
-                    	System.out.println("converted : "+ip_afterConversion+",  Actual ip : "+connectionIP+",   isLoopback: "+InetAddress.getByName(connectionIP).isLoopbackAddress());
+                    	System.out.println("converted : "+ip_afterConversion+",  Actual ip : "+connectionIP+",  " +
+                    			" isLoopback: "+InetAddress.getByName(connectionIP).isLoopbackAddress());
                     }
 	            } catch (UnknownHostException e1) {
 	                   System.out.println("Host not found");

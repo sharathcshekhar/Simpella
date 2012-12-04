@@ -36,9 +36,10 @@ public class SimpellaClient {
 		String ip_afterConversion = null;
 		try {
 			ip_afterConversion = InetAddress.getByName(connectionIP).getHostAddress();
-		 
-			System.out.println("connectionIP = " + connectionIP + " afterConversion = " + ip_afterConversion 
-				+ " Is loopback connection? " + InetAddress.getByName(connectionIP).isLoopbackAddress());
+			if(Simpella.debug) {
+				System.out.println("connectionIP = " + connectionIP + " afterConversion = " + ip_afterConversion 
+						+ " Is loopback connection? " + InetAddress.getByName(connectionIP).isLoopbackAddress());
+			}
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
