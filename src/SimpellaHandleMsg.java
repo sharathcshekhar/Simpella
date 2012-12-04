@@ -26,7 +26,9 @@ private SimpellaStats stats;
 		 * Handle PING Message
 		 */
 		if (header[16] == (byte) 0x00) {
-			System.out.println("Ping received");
+			if(Simpella.debug) {
+				System.out.println("Ping received");
+			}
 			String key = SimpellaRoutingTables.guidToString(header);
 			if (SimpellaRoutingTables.PingTable.containsKey(key) || //seen ping before
 					SimpellaRoutingTables.generatedPingList.contains(key)) { //self generated ping propagating back
@@ -80,7 +82,9 @@ private SimpellaStats stats;
 				System.out.println(len + " bytes of pong payload read, payload length = " + payLoadLen);
 			}
 			if (SimpellaRoutingTables.generatedPingList.contains(guid)) {
-				System.out.println("Pong is for me!");
+				if(Simpella.debug) {
+					System.out.println("Pong is for me!");
+				}
 				ByteArrayInputStream msg = new ByteArrayInputStream(
 						pongPayLoad);
 				//read port no - 2 bytes

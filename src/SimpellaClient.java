@@ -126,7 +126,7 @@ public class SimpellaClient {
 						sessionSocket.getInputStream());
 				len = inFromServer.read(header, 0, 23);
 				if(Simpella.debug) {
-				System.out.println("msg received from server " + 
+					System.out.println("msg received from server " + 
 						sessionSocket.getInetAddress().getHostAddress() + " At port " + 
 						sessionSocket.getPort());
 				}

@@ -33,7 +33,9 @@ public class SimpellaFileShareDB {
 	
 	public void scanSharedDirectory() {
 		if(sharedDirectory == null) {
-			System.out.println("Scan request received, no direcotry shared");
+			if(Simpella.debug) {
+				System.out.println("Scan request received, no direcotry shared");
+			}
 			return;
 		}
 		recurssiveScanDir(sharedDirectory);

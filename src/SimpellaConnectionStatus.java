@@ -278,8 +278,10 @@ public class SimpellaConnectionStatus {
 					incomingConnectionList[i].remotePort = clientSocket
 							.getPort();
 					incomingConnectionCount++;
-					System.out
+					if(Simpella.debug) {
+						System.out
 							.println("Added connection to incominConnectionList");
+					}
 					return;
 				}
 			}

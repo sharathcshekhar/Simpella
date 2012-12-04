@@ -119,10 +119,14 @@ public class SimpellaFileClient {
 				byte tmpbuf;
 				tmpbuf = (byte)clientSocket.getInputStream().read();
 				msg.write(tmpbuf);
-				System.out.println("read " + no_of_bytesRead + " bytes");
+				if(Simpella.debug) {
+					System.out.println("read " + no_of_bytesRead + " bytes");
+				}
 				no_of_bytesRead++;
 				if((previousByteRead == 13) && (tmpbuf == 10)) {
-					System.out.println("CR/LF encountered");
+					if(Simpella.debug) {
+						System.out.println("CR/LF encountered");
+					}
 					no_of_CR_LF++;
 				}
 				previousByteRead = tmpbuf;
@@ -135,7 +139,9 @@ public class SimpellaFileClient {
 			System.out.println("There was an error during file download");	
 			return;
 			}
-			System.out.println("Response received : " + new String(http_header));
+			if(Simpella.debug) {
+				System.out.println("Response received : " + new String(http_header));
+			}
 		} catch (IOException e) {
 			System.out.println("Server Response Error");
 		}

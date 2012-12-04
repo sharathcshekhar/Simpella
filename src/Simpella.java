@@ -220,7 +220,7 @@ public class Simpella {
 				}	
 				
 			} else if (cmd_args[0].equals("download")) {
-				System.out.println("download command");
+				//System.out.println("download command");
 				if(cmd_args.length!=2){
 					System.out.println("Invalid arguments for download");
 					continue;
