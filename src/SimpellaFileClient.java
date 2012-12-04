@@ -1,4 +1,3 @@
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -9,8 +8,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Formatter;
 import java.util.StringTokenizer;
-
-import com.sun.net.httpserver.HttpHandler;
 
 public class SimpellaFileClient {
 	//TODO use SimpellaQueryResults object instead.

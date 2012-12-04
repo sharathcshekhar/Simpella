@@ -123,8 +123,8 @@ public class Simpella {
 			String[] cmd_args = usrInput.split("\\s+");
 			int portNo;
 			if (cmd_args[0].equals("open")) {
-				System.out.println("open command");
-				if(cmd_args.length>3){
+				
+				if(cmd_args.length != 3 ){
 					System.out.println("Invalid input for open command. Sample input 'open <Ip address/Hostname> <port>'");
 					continue;
 				}
@@ -168,10 +168,14 @@ public class Simpella {
 				}
 				
 			} else if (cmd_args[0].equals("find")) {
+				if(cmd_args.length == 1 ){
+					System.out.println("find needs arguments. Usage: find 'text to search'");
+					continue;
+				}
 				setFINDFlag();
 				String userTxt = usrInput.substring(usrInput
-                        .indexOf(" ") + 1);
-				find(userTxt);
+                       .indexOf(" ") + 1);
+								find(userTxt);
 				//wait until user presses enter
 				try {
 					cmdFromUser.readLine();
@@ -203,17 +207,15 @@ public class Simpella {
 				
 			} else if (cmd_args[0].equals("clear")) {
 				if(cmd_args.length>2){
-					System.out.println("Invalid arguments Clear command");
+					System.out.println("Invalid arguments Clear command. Usage: clear 'file_number'");
 					continue;
-				}
-				else{
-					if(cmd_args.length == 2) {
+				} else if(cmd_args.length == 2) {
 						int clear_index = Integer.parseInt(cmd_args[1]);
 						SimpellaConnectionStatus.clearQueryResultsTable(clear_index - 1);
-					} else {
+				} else { //len == 1, clear all
 						SimpellaConnectionStatus.clearQueryResultsTable();
-					}	
-				}
+				}	
+				
 			} else if (cmd_args[0].equals("download")) {
 				System.out.println("download command");
 				if(cmd_args.length!=2){
