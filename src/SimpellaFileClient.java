@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -108,16 +109,33 @@ public class SimpellaFileClient {
 			System.out.println("Error during sending request to server");
 		}
 
-		byte[] readResp = new byte[1000];
 		String resp = null;
+		int no_of_CR_LF = 0;
+		int no_of_bytesRead = 0;
+		byte previousByteRead = 0;
+		ByteArrayOutputStream msg = new ByteArrayOutputStream();
 		try {
-			clientSocket.getInputStream().read(readResp);
-			resp = new String(readResp);
-			if((null == resp)|| !resp.contains("200 OK")&& !resp.contains("503")){
+			while(no_of_CR_LF < 5) {
+				byte tmpbuf;
+				tmpbuf = (byte)clientSocket.getInputStream().read();
+				msg.write(tmpbuf);
+				System.out.println("read " + no_of_bytesRead + " bytes");
+				no_of_bytesRead++;
+				if((previousByteRead == 13) && (tmpbuf == 10)) {
+					System.out.println("CR/LF encountered");
+					no_of_CR_LF++;
+				}
+				previousByteRead = tmpbuf;
+			}
+			byte[] http_header = msg.toByteArray();
+			resp = new String(http_header);
+			
+			if((null == resp)|| !resp.contains("200 OK")&& 
+					!resp.contains("503")){
 			System.out.println("There was an error during file download");	
 			return;
 			}
-			System.out.println("Response received : " + resp);
+			System.out.println("Response received : " + new String(http_header));
 		} catch (IOException e) {
 			System.out.println("Server Response Error");
 		}
@@ -135,20 +153,29 @@ public class SimpellaFileClient {
 			}
 		}
 		
+		
 		FileOutputStream fo = null;
 		File tmpFile = null;
 		String dir = SimpellaFileShareDB.sharedDirectory;
 		DataOutputStream out = null;
 		File newFile = null;
-		if(null!=dir){
-			newFile = new File(dir+"/"+fileName);
-			tmpFile =  new File(dir+"/"+fileName+"_temp");
+		String tmpName = "tmp" + fileName;
+		try{
+			if(null!=dir){
+				newFile = new File(dir+"/"+fileName);
+				tmpFile =  new File(dir+"/"+tmpName);
+			}
+			
+			else{
+				newFile = new File(fileName);
+				tmpFile =  new File(tmpName);				
+			}
+		}catch(NullPointerException npe){
+			System.out.println("File not found");
 		}
-		else{
-			newFile = new File(fileName);
-			tmpFile =  new File(fileName+"_temp");				
+		if(Simpella.debug){
+		System.out.println("Filename = " + tmpFile.getAbsolutePath());
 		}
-		
 		try {
 			fo = new FileOutputStream(tmpFile);
 			out = new DataOutputStream(fo);
@@ -161,6 +188,9 @@ public class SimpellaFileClient {
 		long filedownloaded = 0;
 		try {
 			while (!((i = clientSocket.getInputStream().read(readData, 0, 1024)) == -1)) {
+				if(Simpella.debug){
+				System.out.println("Reading cycle " + i);
+				}
 				filedownloaded+=i;
 				if(Simpella.printDwnload){
 					System.out.println(" ");
@@ -179,24 +209,25 @@ public class SimpellaFileClient {
 		} catch (IOException e) {
 			System.out.println("Error while downloading file");
 		}
-		//delete to if exists to rename it
-		newFile.delete();
-		// rename file
-		/*if (!tmpFile.renameTo(newFile)) {
-			System.out.println("File already exists");
-			return;
-		}*/
+		
 		try {
-			clientSocket.close();
+			out.flush();
+			fo.flush();
+			
 			out.close();
+			fo.close();
+			
 			if (!tmpFile.renameTo(newFile)) {
 				System.out.println("File already exists");
 				return;
-			} 
+			}
+			
+			clientSocket.close();
+			System.out.println("done reading.. closed everything");
 		} catch (IOException e) {
 			System.out.println("Sockets closed abruplty");
 		}
-
+		
 		
 	}
 

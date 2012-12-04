@@ -143,38 +143,6 @@ public class Simpella {
 	                   System.out.println("Host not found");
 	            }
 
-				/*
-				boolean isIP = SimpellaIPUtils.validateIP(cmd_args[1]);
-				if (isIP) {
-					//check for local ip/hostname
-					if (cmd_args[1].startsWith("127.") || //block all IPs from 127.0.0.1 to 127.255.255.254
-							cmd_args[1].equals(localip.getHostAddress())) {
-						System.out
-								.println("Enter the IP of a remote machine");
-						break;
-					}
-				} else {
-					//validate hostname
-					try {
-						InetAddress.getByName(cmd_args[1]);					
-					} catch (UnknownHostException e1) {
-						System.out.println("Enter valid host name");
-						break;
-					}
-					 try {
-						if(cmd_args[1].equalsIgnoreCase("localhost") ||
-								cmd_args[1].equalsIgnoreCase(InetAddress.getLocalHost().getHostName())||
-								cmd_args[1].equalsIgnoreCase(localip.getHostName())) {
-							 System.out.println("Enter hostname of a remote machine"); 
-							 break;
-						 }
-					} catch (UnknownHostException e) {
-						System.out.println("Cannot resolve localhost IP. Continuing");
-						break;
-					}
-				}
-				 end of checks for local connections */
-				
 				portNo = SimpellaIPUtils.StringtoPort(cmd_args[2]);
 				if (portNo == -1) {
 					continue;
@@ -185,16 +153,14 @@ public class Simpella {
 				client.connect();
 
 			} else if(cmd_args[0].equals("info")){
-				System.out.println("info command");
 				if(cmd_args.length!=2){
-					System.out.println("Invalid arguments");
+					info_help();
 					continue;
 				} else{
 					infoCommand(cmd_args);
 				}
 				
 			} else if(cmd_args[0].equals("update")){
-				System.out.println("update command");
 				if(cmd_args.length!=1){
 					System.out.println("Invalid arguments for update. Enter only 'update'");
 				}else{
@@ -202,12 +168,10 @@ public class Simpella {
 				}
 				
 			} else if (cmd_args[0].equals("find")) {
-				System.out.println("find command");
 				setFINDFlag();
 				String userTxt = usrInput.substring(usrInput
-						.indexOf(" ") + 1);
-					find(userTxt);
-				
+                        .indexOf(" ") + 1);
+				find(userTxt);
 				//wait until user presses enter
 				try {
 					cmdFromUser.readLine();
@@ -225,7 +189,6 @@ public class Simpella {
 				}
 				
 			} else if (cmd_args[0].equals("list")) {
-				System.out.println("list command");
 				if(cmd_args.length!=1){
 					System.out.println("List command does not take any arguments. Please enter only 'list'");
 				}
@@ -239,7 +202,6 @@ public class Simpella {
 				
 				
 			} else if (cmd_args[0].equals("clear")) {
-				System.out.println("clear command");
 				if(cmd_args.length>2){
 					System.out.println("Invalid arguments Clear command");
 					continue;
@@ -272,18 +234,21 @@ public class Simpella {
 			
 			} else if (cmd_args[0].equals("share")) {
 				if(cmd_args.length > 1 && cmd_args[1].equals("-i")) {
-					System.out.println("sharing directory " + SimpellaFileShareDB.sharedDirectory);
+					if(SimpellaFileShareDB.sharedDirectory == null) {
+						System.out.println("No files shared in the system. Use share /path/to/shared/folder");
+					} else {
+						System.out.println("sharing directory " + SimpellaFileShareDB.sharedDirectory);
+					}
 				} else {
 					String sharedDirectory = usrInput.substring(usrInput
 							.indexOf(" ") + 1);
 					System.out.println("sharing directory " + sharedDirectory);
 					File share = new File(sharedDirectory);
-					if (!share.exists()) {
-						System.out.println("Invalid file name");
+					if (!share.exists() || !share.isDirectory()) {
+						System.out.println("Invalid directory name");
 						continue;
 					}
 					SimpellaFileShareDB.setSharedDirectory(sharedDirectory);
-
 				}
 			} else if (cmd_args[0].equals("scan")) {
 				if(cmd_args.length!=1){
@@ -461,15 +426,28 @@ public class Simpella {
 					+ SimpellaUtils.memFormat(SimpellaConnectionStatus
 							.getLocalFilesSharedSize()));
 		} else {
-			System.out.println("Invalid value for info. Usage sample info <h,c,n,d,q,s>");
+			info_help();
 		}
 	}
 
+	public static void info_help() {
+		System.out.println("Invalid value for info. Usage: \n" +
+				"info [cdhnqs] - Display list of current connections.\n" +
+				"c - Simpella network connections\n" +
+				"d - file transfer in progress (downloads only)\n" +
+				"h - number of hosts, number of files they are sharing, and total size of those shared files\n" +
+				"n - Simpella statistics: packets received and sent, " +
+				
+					"number of unique packet IDs in memory\n(routing tables)," + 
+					"total Simpella bytes received and sent so far.\n" +
+				"q - queries received and replies sent\n" +
+				"s - number and total size of shared files on this host\n" );
+	}
 
 	public static void find(String searchTxt)
 
 	{
-		if (searchTxt.getBytes().length <= 231) {
+		if (searchTxt.getBytes().length < 254) {
 			SimpellaHeader queryH = new SimpellaHeader();
 			queryH.initializeHeader();
 			queryH.setMsgId();
@@ -503,10 +481,4 @@ public class Simpella {
 		
 		return;
 	}
-	/*public static SimpellaFileShareDB updateFilesandKbs(){
-		SimpellaFileShareDB fileDb = new SimpellaFileShareDB();
-		fileDb.scanSharedDirectory();
-		return fileDb;
-
-	}*/
 }

@@ -149,11 +149,17 @@ public class SimpellaFileServer {
 		
 		File fileStream = new File(file_fullPath);
 		
-		byte[] fileBuffer = new byte[1024]; //Write through a 4Kb buffer
-
+		byte[] fileBuffer = new byte[1024];
+		String fileType = "";
+		if(parsedStrings[3].trim().contains("txt")){
+			fileType = "text";
+		}
+		else{
+			fileType = "binary";
+		}
 		response = "HTTP/1.1 200 OK\r\n";
 		String server = "Server: Simpella0.6\r\n";
-		String contentType = "Content-type: application/binary\r\n";
+		String contentType = "Content-type: application/"+fileType+"\r\n";
 		String contentLen = "Content-length: " + fileStream.length() + "\r\n\r\n";
 		StringBuffer responseBuf = new StringBuffer(response + server
 				+ contentType + contentLen);

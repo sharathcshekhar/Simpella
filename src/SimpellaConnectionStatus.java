@@ -52,6 +52,13 @@ public class SimpellaConnectionStatus {
 	public static Vector<SimpellaQueryResults> queryResults = new  Vector<SimpellaQueryResults>();
 	
 	public static void insertToQueryResultsTable(SimpellaQueryResults results) {
+		if(queryResults.contains(results)) {
+			//duplicate element
+			if(Simpella.debug) {
+				System.out.println("Duplicate element, not adding to the queryResult Table");
+			}
+			return;
+		}
 		if(queryResults.size() < 50) {
 			queryResults.add(0, results);
 		} else {

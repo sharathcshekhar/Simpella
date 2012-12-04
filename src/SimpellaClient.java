@@ -16,12 +16,7 @@ public class SimpellaClient {
 				this.clientSocket = clientSocket;
 			}
 		public void run() {
-				try {
-					connectionListener(clientSocket);
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				connectionListener(clientSocket);
 			}
 		}
 		;
@@ -72,7 +67,6 @@ public class SimpellaClient {
 				System.out.println(S.substring(17, len - 2));
 				//Acknowledge the connection and complete the 3 way handshake.
 				outToServer.write(S.getBytes());
-
 				//Spawn a thread to handle the connection
 				Thread clienListner_t = new Thread(new clientConnectionThread(
 						clientSocket));
