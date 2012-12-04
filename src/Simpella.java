@@ -17,7 +17,7 @@ import java.util.Formatter;
  */
 public class Simpella {
 	
-	public static boolean debug = true;
+	public static boolean debug = false;
 	public static final String LOCAL_IP = SimpellaIPUtils.getLocalIPAddress().getHostAddress();
 	/*
 	 * Global Flags
